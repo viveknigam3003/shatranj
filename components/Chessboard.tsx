@@ -1,5 +1,5 @@
 import { Image } from "@chakra-ui/image";
-import { Box, Flex, Grid, GridItem } from "@chakra-ui/layout";
+import { Box, Flex, Grid, GridItem, Text } from "@chakra-ui/layout";
 import React from "react";
 
 const W = {
@@ -55,13 +55,20 @@ const Chessboard = () => {
     pawnArrayW,
     royalsArrayW,
   ];
+  const rows = [1, 2, 3, 4, 5, 6, 7, 8];
+  const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
   return (
     <GridItem colStart={3} colSpan={5}>
-      <Box width="600px" height="600px" bg="papayawhip">
+      <Box width="600px" height="600px">
         <Flex direction="column" h="100%" justifyContent="space-between">
           {boardRows.map((row, y) => (
             <Flex justifyContent="space-between" width="100%">
+              <Flex alignItems="center" color="black">
+                <Text fontWeight="600" p="2">
+                  {rows[y]}
+                </Text>
+              </Flex>
               {row.map((piece, x) => (
                 <Flex
                   justifyContent="center"
@@ -77,6 +84,15 @@ const Chessboard = () => {
                   ) : null}
                 </Flex>
               ))}
+            </Flex>
+          ))}
+        </Flex>
+        <Flex marginLeft="1.75rem" justifyContent="space-between">
+          {cols.map((col) => (
+            <Flex justifyContent="center" width="75px">
+              <Text fontWeight="600" p="2">
+                {col}
+              </Text>
             </Flex>
           ))}
         </Flex>
