@@ -1,6 +1,7 @@
 import { Image } from "@chakra-ui/image";
 import { Box, Flex, Grid, GridItem, Text } from "@chakra-ui/layout";
 import React from "react";
+import { uid } from "../utils";
 
 const W = {
   rook: { value: "r", image: "/white_pieces/white_rook.png" },
@@ -44,26 +45,26 @@ const royalsArrayB = [
 ];
 const pawnArrayB = Array(8).fill(B.pawn);
 
-const Chessboard = () => {
-  const boardRows = [
-    royalsArrayB,
-    pawnArrayB,
-    nullArray,
-    nullArray,
-    nullArray,
-    nullArray,
-    pawnArrayW,
-    royalsArrayW,
-  ];
-  const rows = [1, 2, 3, 4, 5, 6, 7, 8];
-  const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const boardRows = [
+  royalsArrayB,
+  pawnArrayB,
+  nullArray,
+  nullArray,
+  nullArray,
+  nullArray,
+  pawnArrayW,
+  royalsArrayW,
+];
+const rows = [1, 2, 3, 4, 5, 6, 7, 8];
+const cols = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
+const Chessboard = () => {
   return (
     <GridItem colStart={3} colSpan={5}>
       <Box width="600px" height="600px">
         <Flex direction="column" h="100%" justifyContent="space-between">
           {boardRows.map((row, y) => (
-            <Flex justifyContent="space-between" width="100%">
+            <Flex key={uid()} justifyContent="space-between" width="100%">
               <Flex alignItems="center" color="black">
                 <Text fontWeight="600" p="2">
                   {rows[y]}
@@ -71,6 +72,7 @@ const Chessboard = () => {
               </Flex>
               {row.map((piece, x) => (
                 <Flex
+                  key={uid()}
                   justifyContent="center"
                   alignItems="center"
                   height="75px"
@@ -89,7 +91,7 @@ const Chessboard = () => {
         </Flex>
         <Flex marginLeft="1.75rem" justifyContent="space-between">
           {cols.map((col) => (
-            <Flex justifyContent="center" width="75px">
+            <Flex key={uid()} justifyContent="center" width="75px">
               <Text fontWeight="600" p="2">
                 {col}
               </Text>
