@@ -1,6 +1,8 @@
-import { Box, Grid } from "@chakra-ui/layout";
+import { Box, Center, Flex, Grid, VStack } from "@chakra-ui/layout";
+import { GridItem } from "@chakra-ui/react";
 import { useEffect } from "react";
 import { useCookies } from "react-cookie";
+import Chessboard from "../components/Chessboard";
 import Header from "../components/Header";
 
 const Home = () => {
@@ -23,6 +25,16 @@ const Home = () => {
     <Box>
       <Grid templateColumns="repeat(12, 1fr)" gap="16px">
         <Header />
+        <Chessboard />
+        <GridItem
+          colStart={8}
+          colSpan={3}
+          bg="tomato"
+          width="100%"
+          height="100%"
+        >
+          <Box>User</Box>
+        </GridItem>
       </Grid>
     </Box>
   );
