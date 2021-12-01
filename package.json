@@ -8,9 +8,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^1.7.2",
+    "@emotion/react": "^11.7.0",
+    "@emotion/styled": "^11.6.0",
+    "@fontsource/mulish": "^4.5.2",
+    "@fontsource/roboto": "^4.5.1",
+    "@fontsource/roboto-mono": "^4.5.0",
+    "framer-motion": "^4.1.17",
     "next": "12.0.4",
     "react": "17.0.2",
-    "react-dom": "17.0.2"
+    "react-dom": "17.0.2",
+    "uninstall": "0.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.11.11",
