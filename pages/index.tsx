@@ -1,63 +1,75 @@
-import { Box, Center, Flex, Grid, Text } from "@chakra-ui/layout";
-import { GridItem } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { useCookies } from "react-cookie";
-import Header from "../components/Header";
-import MainChessboard from "../components/MainChessboard";
-import UserDetails from "../components/UserDetails";
+import { Button } from "@chakra-ui/button";
+import { Image } from "@chakra-ui/image";
+import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
+import { NextPage } from "next";
+import Link from "next/link";
+import { MetamaskIcon } from "../components/MetamaskIcon";
+import styles from "../styles/Home.module.css";
 
-const Home = () => {
-  const [hasMetamask, setHasMetamask] = useState(true);
-  const [cookie, setCookie, removeCookie] = useCookies(["user"]);
-
-  useEffect(() => {
-    if (typeof window !== undefined) {
-      if (window.ethereum && window.ethereum.isMetaMask) {
-        const ethereum = window.ethereum;
-        ethereum.on("accountsChanged", (accounts) => {
-          if (accounts[0]) {
-            setCookie("user", JSON.stringify(accounts[0]), {
-              path: "/",
-              sameSite: true,
-            });
-          } else {
-            removeCookie("user");
-          }
-        });
-      } else {
-        setHasMetamask(false);
-      }
-    }
-  }, []);
-
+const Home: NextPage = () => {
   return (
-    <Box>
-      {hasMetamask ? (
-        <Grid templateColumns="repeat(12, 1fr)" gap="16px">
-          <Header />
-          <MainChessboard />
-          <GridItem colStart={8} colSpan={3} width="100%" height="100%">
-            <Flex
-              direction="column"
-              height="100%"
-              border="1px solid #bbb"
-              borderRadius="10px"
-              margin="4"
-            >
-              <UserDetails hash={cookie.user} flexBasis="50%" p="4" />
-              <UserDetails hash={cookie.user} flexBasis="50%" p="4" />
-            </Flex>
-          </GridItem>
-        </Grid>
-      ) : (
-        <Center>
-          <Text fontSize="2rem" maxW="60%">
-            No Metamask Wallet Installed. Please install metamask wallet to
-            continue
+    <Flex
+      height="100vh"
+      className={styles.root}
+      flexDir="column"
+      justifyContent="space-between"
+    >
+      <Flex flexWrap={{ base: "wrap", lg: "nowrap" }} height="100%">
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          px={{ base: "2rem", lg: "8rem" }}
+          flexBasis="50%"
+          className={styles.hero}
+        >
+          <Box py="2rem">
+            <Heading fontSize={{ base: "2.5rem", lg: "5rem", xl: "6rem" }}>
+              Shatranj
+            </Heading>
+            <Text fontSize={{ base: "1.25rem", xl: "1.5rem" }} color="gray.500">
+              The classic game of chess. The modern prize for winning.
+            </Text>
+          </Box>
+          <Button
+            colorScheme="whiteAlpha"
+            width="fit-content"
+            leftIcon={<MetamaskIcon />}
+            size="lg"
+          >
+            Connect wallet to play
+          </Button>
+          <Text py="2" fontSize="0.8rem" color="gray.500">
+            Shatranj currently supports only Metamask wallet. If you don't have
+            an account, follow the instructions{" "}
+            <a className={styles.link} href="https://metamask.io/download.html">
+              here
+            </a>{" "}
+            to install Metamask
           </Text>
+        </Box>
+        <Center flexBasis={{ md: "50%" }}>
+          <Image src="/rook.png" />
         </Center>
-      )}
-    </Box>
+      </Flex>
+      <Flex
+        width="100%"
+        flexDir="column"
+        justifyContent="center"
+        alignItems="center"
+        className={styles.footer}
+      >
+        <Text color="gray.500">Developed by Team Web23</Text>
+        <HStack color="gray.500" p="2">
+          <Link href="/about">
+            <Text className={styles.link}>About</Text>
+          </Link>
+          <Link href="/instruction">
+            <Text className={styles.link}>How to play</Text>
+          </Link>
+        </HStack>
+      </Flex>
+    </Flex>
   );
 };
 

@@ -1,27 +1,15 @@
-@font-face {
-  font-family: 'Moon';
-  src: url('../fonts/Moon_Bold.otf') format('opentype');
-  font-style: normal;
-  font-weight: 500;
-}
-
-@font-face {
-  font-family: 'Moon';
-  src: url('../fonts/Moon_Light.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-}
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@300;500;700&family=Inter:wght@400;600&display=swap');
 
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: Mulish, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+  font-family: Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
     Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
 }
 
 h1 {
-  font-family: 'Moon', sans-serif;
+  font-family: 'Epilogue', sans-serif;
 }
 
 a {

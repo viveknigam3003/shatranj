@@ -1,6 +1,6 @@
 import { GridItem } from "@chakra-ui/layout";
 import * as ChessJS from "chess.js";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Chessboard } from "react-chessboard";
 
 const Chess = typeof ChessJS === "function" ? ChessJS : ChessJS.Chess;
@@ -33,7 +33,7 @@ const MainChessboard = () => {
       return move;
     });
     newSquares[square] = {
-      background: "rgba(255, 255, 0, 0.4)",
+      background: game.in_check() ? "rgba(255,0,255,0.5)" : "rgba(255, 255, 0, 0.4)",
     };
     setOptionSquares(newSquares);
   };
@@ -78,6 +78,10 @@ const MainChessboard = () => {
     setOptionSquares({});
   };
 
+  useEffect(() => {
+    console.log(game.fen());
+  }, [game])
+
   return (
     <GridItem colStart={3} colSpan={5}>
       <Chessboard
@@ -94,7 +98,10 @@ const MainChessboard = () => {
           ...rightClickedSquares,
         }}
         customDarkSquareStyle={{ backgroundColor: "#7e7e7e" }}
-        customLightSquareStyle={{ backgroundColor: "#fffafa" }}
+        customLightSquareStyle={{
+          backgroundColor: "rgba(255, 255, 255, .15)",
+          backdropFilter: "blur(5px)",
+        }}
       />
     </GridItem>
   );
