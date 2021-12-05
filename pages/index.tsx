@@ -12,7 +12,7 @@ const Home = () => {
 
   useEffect(() => {
     if (typeof window !== undefined) {
-      if (typeof window.ethereum !== undefined) {
+      if (window.ethereum && window.ethereum.isMetaMask) {
         const ethereum = window.ethereum;
         ethereum.on("accountsChanged", (accounts) => {
           if (accounts[0]) {
