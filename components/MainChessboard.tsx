@@ -69,7 +69,7 @@ const MainChessboard = () => {
     setGame(gameCopy);
 
     // if invalid, setMoveFrom and getMoveOptions
-    if (move === null) {
+    if (move === undefined) {
       resetMove(square);
       return;
     }
