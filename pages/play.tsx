@@ -29,7 +29,7 @@ const PlayPage: NextPage = () => {
         setHasMetamask(false);
       }
     }
-  }, []);
+  }, [removeCookie, setCookie]);
 
   return (
     <Box>

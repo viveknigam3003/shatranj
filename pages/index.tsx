@@ -68,8 +68,8 @@ const Home: NextPage = () => {
             Connect wallet to play
           </Button>
           <Text py="2" fontSize="0.8rem" color="gray.500">
-            Shatranj currently supports only Metamask wallet. If you don&apos;t have
-            an account, follow the instructions{" "}
+            Shatranj currently supports only Metamask wallet. If you don&apos;t
+            have an account, follow the instructions{" "}
             <a className={styles.link} href="https://metamask.io/download.html">
               here
             </a>{" "}
@@ -77,7 +77,7 @@ const Home: NextPage = () => {
           </Text>
         </Box>
         <Center flexBasis={{ md: "50%" }}>
-          <Image src="/rook.png" />
+          <Image alt="Rook" src="/rook.png" />
         </Center>
       </Flex>
       <Flex
@@ -89,10 +89,10 @@ const Home: NextPage = () => {
       >
         <Text color="gray.500">Developed by Team Web23</Text>
         <HStack color="gray.500" p="2">
-          <Link href="/about">
+          <Link passHref href="/about">
             <Text className={styles.link}>About</Text>
           </Link>
-          <Link href="/instruction">
+          <Link passHref href="/instruction">
             <Text className={styles.link}>How to play</Text>
           </Link>
         </HStack>
