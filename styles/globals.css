@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@300;500;700&family=Inter:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@300;500;700&family=Inter:wght@400;600&family=JetBrains+Mono&display=swap');
 
 html,
 body {
@@ -10,6 +10,10 @@ body {
 
 h1 {
   font-family: 'Epilogue', sans-serif;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
 }
 
 a {

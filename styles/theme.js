@@ -4,7 +4,7 @@ const theme = extendTheme({
   fonts: {
     body: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif",
     heading: "Epilogue, sans-serif",
-    monospace: "Roboto Mono",
+    monospace: "JetBrains Mono, monospace",
   },
   colors: {
     black: "#1A1110",
