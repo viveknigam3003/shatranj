@@ -68,7 +68,7 @@ const Home: NextPage = () => {
             Connect wallet to play
           </Button>
           <Text py="2" fontSize="0.8rem" color="gray.500">
-            Shatranj currently supports only Metamask wallet. If you don't have
+            Shatranj currently supports only Metamask wallet. If you don&apos;t have
             an account, follow the instructions{" "}
             <a className={styles.link} href="https://metamask.io/download.html">
               here
