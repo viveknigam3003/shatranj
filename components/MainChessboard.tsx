@@ -1,4 +1,5 @@
 import { GridItem } from "@chakra-ui/layout";
+import { Box } from "@chakra-ui/react";
 import * as ChessJS from "chess.js";
 import React, { useEffect, useState } from "react";
 import { Chessboard } from "react-chessboard";
@@ -33,7 +34,9 @@ const MainChessboard = () => {
       return move;
     });
     newSquares[square] = {
-      background: game.in_check() ? "rgba(255,0,255,0.5)" : "rgba(255, 255, 0, 0.4)",
+      background: game.in_check()
+        ? "rgba(255,0,255,0.5)"
+        : "rgba(255, 255, 0, 0.4)",
     };
     setOptionSquares(newSquares);
   };
@@ -80,30 +83,28 @@ const MainChessboard = () => {
 
   useEffect(() => {
     console.log(game.fen());
-  }, [game])
+  }, [game]);
 
   return (
-    <GridItem colStart={3} colSpan={5}>
-      <Chessboard
-        arePiecesDraggable={false}
-        position={game.fen()}
-        onSquareClick={onSquareClick}
-        onSquareRightClick={onSquareRightClick}
-        customBoardStyle={{
-          borderRadius: "4px",
-          boxShadow: "0 5px 15px rgba(0, 0, 0, 0.5)",
-        }}
-        customSquareStyles={{
-          ...optionSquares,
-          ...rightClickedSquares,
-        }}
-        customDarkSquareStyle={{ backgroundColor: "#7e7e7e" }}
-        customLightSquareStyle={{
-          backgroundColor: "rgba(255, 255, 255, .15)",
-          backdropFilter: "blur(5px)",
-        }}
-      />
-    </GridItem>
+    <Chessboard
+      arePiecesDraggable={false}
+      position={game.fen()}
+      onSquareClick={onSquareClick}
+      onSquareRightClick={onSquareRightClick}
+      customBoardStyle={{
+        borderRadius: "4px",
+        boxShadow: "0 5px 15px rgba(0, 0, 0, 0.5)",
+      }}
+      customSquareStyles={{
+        ...optionSquares,
+        ...rightClickedSquares,
+      }}
+      customDarkSquareStyle={{ backgroundColor: "#7e7e7e" }}
+      customLightSquareStyle={{
+        backgroundColor: "rgba(255, 255, 255, .15)",
+        backdropFilter: "blur(5px)",
+      }}
+    />
   );
 };
 

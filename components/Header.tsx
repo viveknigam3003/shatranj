@@ -7,22 +7,22 @@ const Header = () => {
   const [cookies] = useCookies(["user"]);
 
   return (
-    <>
-      <GridItem colStart={3} colSpan={6}>
-        <Box px="4rem" py="2rem">
-          <Heading fontSize="2rem" letterSpacing="wider">
-            SHATRANJ
-          </Heading>
-        </Box>
-      </GridItem>
-      <GridItem colStart={9} colSpan={2}>
-        {cookies.user ? (
-          <UserProfile user={cookies.user} />
-        ) : (
-          <MetamaskLoginButton />
-        )}
-      </GridItem>
-    </>
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent="space-between"
+      px="16rem"
+      py="2.5rem"
+    >
+      <Heading fontSize="2rem" letterSpacing="wider">
+        Shatranj
+      </Heading>
+      {cookies.user ? (
+        <UserProfile user={cookies.user} />
+      ) : (
+        <MetamaskLoginButton />
+      )}
+    </Box>
   );
 };
 

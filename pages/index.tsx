@@ -3,6 +3,7 @@ import { Image } from "@chakra-ui/image";
 import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
 import { useToast } from "@chakra-ui/toast";
 import { NextPage } from "next";
+import { useRouter } from "next/dist/client/router";
 import Link from "next/link";
 import { useCookies } from "react-cookie";
 import { MetamaskIcon } from "../components/MetamaskIcon";
@@ -10,6 +11,7 @@ import styles from "../styles/Home.module.css";
 
 const Home: NextPage = () => {
   const toast = useToast();
+  const router = useRouter();
   const [_, setCookie] = useCookies(["user"]);
 
   const connectMetamask = async () => {
@@ -21,6 +23,7 @@ const Home: NextPage = () => {
         path: "/",
         sameSite: true,
       });
+      router.push("/play")
     } catch (err) {
       toast({
         title: "Could Not Connect to Metamask",
