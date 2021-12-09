@@ -1,43 +1,55 @@
-import { GridItem } from "@chakra-ui/layout";
-import { Box } from "@chakra-ui/react";
 import * as ChessJS from "chess.js";
 import React, { useEffect, useState } from "react";
 import { Chessboard } from "react-chessboard";
+import { ChessGame, Orientation } from "../pages/play";
 
-const Chess = typeof ChessJS === "function" ? ChessJS : ChessJS.Chess;
+interface MainChessboardProps {
+  game: ChessGame;
+  setGame: (game: ChessGame) => void;
+  boardOrientation?: Orientation;
+}
 
-const MainChessboard = () => {
-  const [game, setGame] = useState(new Chess());
+const MainChessboard: React.FC<MainChessboardProps> = ({
+  game,
+  setGame,
+  boardOrientation = "white",
+}) => {
   const [moveFrom, setMoveFrom] = useState<ChessJS.Square>(null);
   const [rightClickedSquares, setRightClickedSquares] = useState({});
   const [optionSquares, setOptionSquares] = useState({});
+  const [customBoardStyles, setCustomBoardStyles] = useState({});
+
+  useEffect(() => {
+    setCustomBoardStyles(getCustomBoardStyles(game));
+  }, [game]);
 
   const getMoveOptions = (square: ChessJS.Square) => {
     const moves = game.moves({
       square,
       verbose: true,
     });
+
     if (moves.length === 0) {
       return;
     }
 
     const newSquares = {};
-    moves.map((move) => {
+
+    moves.forEach((move) => {
       newSquares[move.to] = {
         background:
           game.get(move.to) &&
           game.get(move.to).color !== game.get(square).color
             ? "radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)"
-            : "radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)",
+            : "radial-gradient(circle, rgba(255,255,255,.1) 25%, transparent 25%)",
         borderRadius: "50%",
       };
-      return move;
     });
+
     newSquares[square] = {
-      background: game.in_check()
-        ? "rgba(255,0,255,0.5)"
-        : "rgba(255, 255, 0, 0.4)",
+      background: "rgba(255, 255, 0, 0.4)",
     };
+
     setOptionSquares(newSquares);
   };
 
@@ -54,6 +66,8 @@ const MainChessboard = () => {
   };
 
   const onSquareClick = (square: ChessJS.Square) => {
+    // if (game.turn() !== boardOrientation[0]) return;
+
     setRightClickedSquares({});
 
     const resetMove = (square: ChessJS.Square) => {
@@ -81,19 +95,42 @@ const MainChessboard = () => {
     setOptionSquares({});
   };
 
-  useEffect(() => {
-    console.log(game.fen());
-  }, [game]);
+  const getCustomBoardStyles = (gameInstance: ChessGame) => {
+    if (gameInstance.in_checkmate()) {
+      return {
+        boxShadow: "0 8px 32px rgba(239, 37, 37, 0.5)",
+      };
+    }
+
+    if (gameInstance.in_check()) {
+      console.log("game in check");
+      return {
+        boxShadow: "0 8px 32px rgba(239, 180, 37, 0.5)",
+      };
+    }
+
+    if (gameInstance.in_stalemate()) {
+      return {
+        boxShadow: "0 8px 32px rgba(255, 34, 123, 0.5)",
+      };
+    }
+
+    return {
+      boxShadow: "0 5px 15px rgba(0, 0, 0, 0.5)",
+    };
+  };
 
   return (
     <Chessboard
       arePiecesDraggable={false}
+      boardOrientation={boardOrientation}
       position={game.fen()}
       onSquareClick={onSquareClick}
       onSquareRightClick={onSquareRightClick}
       customBoardStyle={{
         borderRadius: "4px",
-        boxShadow: "0 5px 15px rgba(0, 0, 0, 0.5)",
+        transition: "0.05s all",
+        ...customBoardStyles,
       }}
       customSquareStyles={{
         ...optionSquares,
