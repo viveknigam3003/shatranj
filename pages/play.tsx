@@ -24,14 +24,9 @@ const updateGame = (
   setGame(gameCopy);
 };
 
-const defaultFEN =
-  "r1bqk2r/pppp1ppp/2P5/8/1b6/1Q3pP1/PP1PPP1P/R1B1KB1R b KQkq - 1 8";
-
-const checkFEN = "4k3/4P3/4K3/8/8/8/8/8 b - - 0 78";
-
 const PlayPage: NextPage = () => {
   const [game, setGame] = useState(newGame);
-  const [fen, setFen] = useState<string>(checkFEN);
+  const [fen, setFen] = useState<string>("");
   const currentPlayerSide: Orientation = "white";
 
   return (
@@ -43,10 +38,13 @@ const PlayPage: NextPage = () => {
           setGame={setGame}
           boardOrientation={currentPlayerSide}
         />
+        <Button
+          colorScheme="blue"
+          onClick={() => updateGame(game, setGame, fen)}
+        >
+          Mock PGN
+        </Button>
       </Flex>
-      <Button colorScheme="blue" onClick={() => updateGame(game, setGame, fen)}>
-        Mock PGN
-      </Button>
     </Box>
   );
 };

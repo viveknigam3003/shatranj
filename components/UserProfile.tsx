@@ -3,7 +3,13 @@ import React from "react";
 
 const UserProfile: React.FC<{ user: string }> = ({ user }) => {
   return (
-    <HStack alignItems="center" justifyContent="center" height="100%">
+    <HStack
+      alignItems="center"
+      justifyContent="center"
+      height="100%"
+      borderRadius="10px"
+      bg="blue.500"
+    >
       {/* <Avatar name={user} src={user} /> */}
       <Box spacing={1} maxWidth="50%">
         {/* <Text fontWeight="600">{user.username}</Text> */}
