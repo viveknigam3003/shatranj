@@ -1,11 +1,8 @@
 import { Box, Heading } from "@chakra-ui/layout";
-import { useCookies } from "react-cookie";
 import MetamaskLoginButton from "./MetamaskLoginButton";
 import UserProfile from "./UserProfile";
 
-const Header = () => {
-  const [cookies] = useCookies(["user"]);
-
+const Header: React.FC<{ account: string }> = ({ account }) => {
   return (
     <Box
       display="flex"
@@ -17,11 +14,7 @@ const Header = () => {
       <Heading fontSize="2rem" letterSpacing="wider">
         Shatranj
       </Heading>
-      {cookies.user ? (
-        <UserProfile account={cookies.user} />
-      ) : (
-        <MetamaskLoginButton />
-      )}
+      {account ? <UserProfile account={account} /> : <MetamaskLoginButton />}
     </Box>
   );
 };
