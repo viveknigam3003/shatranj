@@ -1,7 +1,7 @@
 import { Tag, TagLabel, TagLeftIcon } from "@chakra-ui/react";
 import React from "react";
 import { FaChessKnight } from "react-icons/fa";
-import { truncateHash } from "../pages/play";
+import { truncateHash } from "../utils";
 
 const UserProfile: React.FC<{ account: string }> = ({ account }) => {
   const truncatedAccount = truncateHash(account.toUpperCase());

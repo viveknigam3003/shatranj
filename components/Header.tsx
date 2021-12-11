@@ -1,5 +1,4 @@
 import { Box, Heading } from "@chakra-ui/layout";
-import MetamaskLoginButton from "./MetamaskLoginButton";
 import UserProfile from "./UserProfile";
 
 const Header: React.FC<{ account: string }> = ({ account }) => {
@@ -14,7 +13,7 @@ const Header: React.FC<{ account: string }> = ({ account }) => {
       <Heading fontSize="2rem" letterSpacing="wider">
         Shatranj
       </Heading>
-      {account ? <UserProfile account={account} /> : <MetamaskLoginButton />}
+      {account && <UserProfile account={account} />}
     </Box>
   );
 };

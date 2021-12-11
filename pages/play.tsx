@@ -24,10 +24,6 @@ const updateGame = (
   setGame(gameCopy);
 };
 
-export const truncateHash = (hash: string) => {
-  return hash.substring(0, 5) + "..." + hash.substring(hash.length - 4);
-};
-
 const newGame = new Chess();
 
 const PlayPage: NextPage = () => {
