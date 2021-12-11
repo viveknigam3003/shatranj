@@ -1,7 +1,7 @@
 import { Box, BoxProps, HStack, Text } from "@chakra-ui/layout";
 import { Tag, TagLabel } from "@chakra-ui/react";
 import React from "react";
-import { truncateHash } from "../pages/play";
+import { truncateHash } from "../utils";
 
 interface Props {
   account: string;

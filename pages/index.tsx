@@ -15,6 +15,8 @@ const Home: NextPage = () => {
   const [_, setCookie] = useCookies(["user"]);
 
   const connectMetamask = async () => {
+    if(typeof window === undefined) return;
+    
     try {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
