@@ -4,6 +4,7 @@ import { NextPage } from "next";
 import React, { useState } from "react";
 import Header from "../components/Header";
 import MainChessboard from "../components/MainChessboard";
+import MoveList from "../components/MoveList";
 import UserDetails from "../components/UserDetails";
 import styles from "../styles/Play.module.css";
 
@@ -47,7 +48,6 @@ const PlayPage: NextPage = () => {
         <Box
           display="flex"
           flexDir="column"
-          justifyContent="space-between"
           flexBasis="35%"
           bg="whiteAlpha.200"
           borderRadius="4px"
@@ -60,9 +60,16 @@ const PlayPage: NextPage = () => {
           >
             Mock PGN
           </Button> */}
+          <MoveList game={game} />
           <Box>
-            <UserDetails account="0x246fd79365CA79BEB812B5635E8bE38453e2BF1C" />
-            <UserDetails account="0xC89337a02D3A3b913147aACF8F5b06Ad046663A9" />
+            <UserDetails
+              username="altstream"
+              account="0x246fd79365CA79BEB812B5635E8bE38453e2BF1C"
+            />
+            <UserDetails
+              username="rehesamay"
+              account="0xC89337a02D3A3b913147aACF8F5b06Ad046663A9"
+            />
           </Box>
         </Box>
       </Flex>
