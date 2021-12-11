@@ -2,7 +2,6 @@ import { Box, Flex } from "@chakra-ui/layout";
 import * as ChessJS from "chess.js";
 import { NextPage } from "next";
 import React, { useState } from "react";
-import { useCookies } from "react-cookie";
 import Header from "../components/Header";
 import MainChessboard from "../components/MainChessboard";
 import MoveList from "../components/MoveList";
@@ -29,7 +28,7 @@ const newGame = new Chess();
 const PlayPage: NextPage = () => {
   const [game, setGame] = useState(newGame);
   // const [fen, setFen] = useState<string>("");
-  const [cookies] = useCookies(["user"]);
+  const currentUser = localStorage.getItem("user");
   const players = {
     white: {
       username: "altstream",
@@ -41,11 +40,13 @@ const PlayPage: NextPage = () => {
     },
   };
   const currentPlayerSide: Orientation =
-    players.white.account.toLowerCase() === cookies.user ? "white" : "black";
+    players.white.account.toLowerCase() === currentUser.toLowerCase()
+      ? "white"
+      : "black";
 
   return (
     <Box height="100vh" className={styles.root}>
-      <Header account={cookies.user} />
+      <Header account={currentUser} />
       <Flex alignItems="center" justifyContent="space-between" px="16rem">
         <Box flexBasis="65%">
           <MainChessboard
