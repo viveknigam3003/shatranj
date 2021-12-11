@@ -35,7 +35,7 @@ const MoveList: React.FC<MoveListProps> = ({ game }) => {
 
   console.log(history);
   return (
-    <Box h="60%" overflowY="scroll" mb="4">
+    <Box overflowY={"auto"} h="60%" mb="4">
       <Table size={"sm"} variant={"striped"} colorScheme={"whiteAlpha"}>
         <TableCaption>Move History</TableCaption>
         <Thead>
