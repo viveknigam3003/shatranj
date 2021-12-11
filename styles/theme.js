@@ -1,4 +1,5 @@
 import { extendTheme } from "@chakra-ui/react";
+import ScrollBarTheme from "./Scrollbar.theme";
 
 const theme = extendTheme({
   fonts: {
@@ -8,14 +9,19 @@ const theme = extendTheme({
   },
   colors: {
     black: "#1A1110",
-    white: "#fffafa"
+    white: "#fffafa",
   },
   components: {
     Heading: {
       baseStyle: {
-        fontWeight: 300
-      }
-    }
+        fontWeight: 300,
+      },
+    },
+  },
+  styles: {
+    global: (props) => ({
+      ...ScrollBarTheme(props),
+    }),
   },
 });
 
