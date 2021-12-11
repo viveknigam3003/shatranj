@@ -1,7 +1,7 @@
 import { Box, Flex } from "@chakra-ui/layout";
 import * as ChessJS from "chess.js";
 import { NextPage } from "next";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "../components/Header";
 import MainChessboard from "../components/MainChessboard";
 import MoveList from "../components/MoveList";
@@ -28,7 +28,7 @@ const newGame = new Chess();
 const PlayPage: NextPage = () => {
   const [game, setGame] = useState(newGame);
   // const [fen, setFen] = useState<string>("");
-  const currentUser = localStorage.getItem("user");
+  const [currentUser, setCurrentUser] = useState<string>("");
   const players = {
     white: {
       username: "altstream",
@@ -43,6 +43,12 @@ const PlayPage: NextPage = () => {
     players.white.account.toLowerCase() === currentUser.toLowerCase()
       ? "white"
       : "black";
+
+  useEffect(() => {
+    if (typeof window !== undefined) {
+      setCurrentUser(localStorage.getItem("user"));
+    }
+  }, [setCurrentUser]);
 
   return (
     <Box height="100vh" className={styles.root}>
