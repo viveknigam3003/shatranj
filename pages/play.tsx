@@ -1,5 +1,4 @@
 import { Box, Flex } from "@chakra-ui/layout";
-import { Button } from "@chakra-ui/react";
 import * as ChessJS from "chess.js";
 import { NextPage } from "next";
 import React, { useState } from "react";
@@ -27,7 +26,7 @@ const updateGame = (
 
 export const truncateHash = (hash: string) => {
   return hash.substring(0, 5) + "..." + hash.substring(hash.length - 4);
-}
+};
 
 const PlayPage: NextPage = () => {
   const [game, setGame] = useState(newGame);
@@ -61,11 +60,9 @@ const PlayPage: NextPage = () => {
           >
             Mock PGN
           </Button> */}
-          <Box flexBasis="50%">
-            <UserDetails account={truncateHash("0x246fd79365CA79BEB812B5635E8bE38453e2BF1C")} />
-          </Box>
-          <Box flexBasis="50%">
-            <UserDetails account={truncateHash("0xC89337a02D3A3b913147aACF8F5b06Ad046663A9")} />
+          <Box>
+            <UserDetails account="0x246fd79365CA79BEB812B5635E8bE38453e2BF1C" />
+            <UserDetails account="0xC89337a02D3A3b913147aACF8F5b06Ad046663A9" />
           </Box>
         </Box>
       </Flex>

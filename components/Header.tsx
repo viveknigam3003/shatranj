@@ -1,4 +1,4 @@
-import { Box, GridItem, Heading } from "@chakra-ui/layout";
+import { Box, Heading } from "@chakra-ui/layout";
 import { useCookies } from "react-cookie";
 import MetamaskLoginButton from "./MetamaskLoginButton";
 import UserProfile from "./UserProfile";
@@ -18,7 +18,7 @@ const Header = () => {
         Shatranj
       </Heading>
       {cookies.user ? (
-        <UserProfile user={cookies.user} />
+        <UserProfile account={cookies.user} />
       ) : (
         <MetamaskLoginButton />
       )}
