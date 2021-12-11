@@ -1,5 +1,5 @@
 import { Box, BoxProps, HStack, Text } from "@chakra-ui/layout";
-import { Tag } from "@chakra-ui/react";
+import { Tag, TagLabel } from "@chakra-ui/react";
 import React from "react";
 import { truncateHash } from "../pages/play";
 
@@ -18,14 +18,10 @@ const UserDetails: React.FC<Props & BoxProps> = ({
   return (
     <Box {...props}>
       <HStack alignItems="flex-start" justifyContent="flex-start" height="100%">
-        <Box spacing={1} maxWidth="50%">
-          <Text fontWeight="600">{username}</Text>
-          <Tag variant="subtle" colorScheme="whiteAlpha">
-            <Text fontSize="0.8rem" isTruncated>
-              {truncatedAccount}
-            </Text>
-          </Tag>
-        </Box>
+        <Text fontWeight="600">{username}</Text>
+        <Tag variant="subtle" colorScheme="whiteAlpha">
+          <TagLabel fontSize="0.8rem">{truncatedAccount}</TagLabel>
+        </Tag>
       </HStack>
     </Box>
   );
