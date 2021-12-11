@@ -5,6 +5,7 @@ import { NextPage } from "next";
 import React, { useState } from "react";
 import Header from "../components/Header";
 import MainChessboard from "../components/MainChessboard";
+import UserDetails from "../components/UserDetails";
 import styles from "../styles/Play.module.css";
 
 const Chess = typeof ChessJS === "function" ? ChessJS : ChessJS.Chess;
@@ -24,6 +25,10 @@ const updateGame = (
   setGame(gameCopy);
 };
 
+export const truncateHash = (hash: string) => {
+  return hash.substring(0, 5) + "..." + hash.substring(hash.length - 4);
+}
+
 const PlayPage: NextPage = () => {
   const [game, setGame] = useState(newGame);
   const [fen, setFen] = useState<string>("");
@@ -33,17 +38,36 @@ const PlayPage: NextPage = () => {
     <Box height="100vh" className={styles.root}>
       <Header />
       <Flex alignItems="center" justifyContent="space-between" px="16rem">
-        <MainChessboard
-          game={game}
-          setGame={setGame}
-          boardOrientation={currentPlayerSide}
-        />
-        <Button
-          colorScheme="blue"
-          onClick={() => updateGame(game, setGame, fen)}
+        <Box flexBasis="65%">
+          <MainChessboard
+            game={game}
+            setGame={setGame}
+            boardOrientation={currentPlayerSide}
+          />
+        </Box>
+        <Box
+          display="flex"
+          flexDir="column"
+          justifyContent="space-between"
+          flexBasis="35%"
+          bg="whiteAlpha.200"
+          borderRadius="4px"
+          padding="1rem"
+          height="560px"
         >
-          Mock PGN
-        </Button>
+          {/* <Button
+            colorScheme="blue"
+            onClick={() => updateGame(game, setGame, fen)}
+          >
+            Mock PGN
+          </Button> */}
+          <Box flexBasis="50%">
+            <UserDetails account={truncateHash("0x246fd79365CA79BEB812B5635E8bE38453e2BF1C")} />
+          </Box>
+          <Box flexBasis="50%">
+            <UserDetails account={truncateHash("0xC89337a02D3A3b913147aACF8F5b06Ad046663A9")} />
+          </Box>
+        </Box>
       </Flex>
     </Box>
   );
