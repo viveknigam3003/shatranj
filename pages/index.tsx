@@ -9,7 +9,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  useDisclosure,
+  useDisclosure
 } from "@chakra-ui/react";
 import axios from "axios";
 import { ethers } from "ethers";
@@ -36,7 +36,6 @@ const Home: NextPage = () => {
   const [token, setToken] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [uuid, setUuid] = useState("");
-  const [matchData, setMatchData] = useState(null);
 
   useEffect(() => {
     const userToken = cookie.get("token");
@@ -164,7 +163,6 @@ const Home: NextPage = () => {
   };
 
   const findMatchOpponent = async () => {
-    console.log("Finding a match");
     onOpen();
 
     const username = localStorage.getItem("user");
@@ -177,7 +175,6 @@ const Home: NextPage = () => {
 
     try {
       const response = await axios.post(uri, data);
-      console.log(response.data);
       setUuid(response.data.UUID);
     } catch (e) {
       console.log(e);
@@ -192,14 +189,10 @@ const Home: NextPage = () => {
       sse.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.match_id) {
-          console.log("Match Found!");
-          setMatchData({
-            matchId: data.match_id,
-            white: data.white,
-            black: data.black,
-          });
           sse.close();
           onClose();
+          createToast("Match Found", "success");
+          router.push(`/play/${data.match_id}`);
         }
       };
 
@@ -217,11 +210,7 @@ const Home: NextPage = () => {
         sse.close();
       };
     }
-  }, [uuid, onClose, createToast]);
-
-  useEffect(() => {
-    console.log(matchData);
-  }, [matchData]);
+  }, [uuid, onClose, router, createToast]);
 
   const handleGracefulClose = async (uuid: string) => {
     console.log("Matchmaking request cancelled!");

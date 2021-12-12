@@ -1,18 +1,20 @@
 import * as ChessJS from "chess.js";
 import React, { useEffect, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { ChessGame, Orientation } from "../pages/play";
+import { ChessGame, Orientation } from "../pages/play/[id]";
 
 interface MainChessboardProps {
   game: ChessGame;
   setGame: (game: ChessGame) => void;
   boardOrientation?: Orientation;
+  allowMoves?: boolean;
 }
 
 const MainChessboard: React.FC<MainChessboardProps> = ({
   game,
   setGame,
   boardOrientation = "white",
+  allowMoves,
 }) => {
   const [moveFrom, setMoveFrom] = useState<ChessJS.Square>(null);
   const [rightClickedSquares, setRightClickedSquares] = useState({});
@@ -66,7 +68,8 @@ const MainChessboard: React.FC<MainChessboardProps> = ({
   };
 
   const onSquareClick = (square: ChessJS.Square) => {
-    // if (game.turn() !== boardOrientation[0]) return;
+    if (!allowMoves) return;
+    if (game.turn() !== boardOrientation[0]) return; //boardOrientation[0] = 'w' | 'b'
 
     setRightClickedSquares({});
 

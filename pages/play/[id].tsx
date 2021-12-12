@@ -1,16 +1,25 @@
 import { Box, Flex } from "@chakra-ui/layout";
-import { useToast } from "@chakra-ui/react";
+import {
+    CircularProgress,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalHeader,
+    ModalOverlay,
+    useDisclosure,
+    useToast
+} from "@chakra-ui/react";
 import * as ChessJS from "chess.js";
 import { GetServerSidePropsContext, NextPage } from "next";
 import nookies from "nookies";
 import React, { useEffect, useMemo, useState } from "react";
 import io from "socket.io-client";
-import Header from "../components/Header";
-import MainChessboard from "../components/MainChessboard";
-import MoveList from "../components/MoveList";
-import OptionPanel from "../components/OptionPanel";
-import styles from "../styles/Play.module.css";
-import { truncateHash } from "../utils";
+import Header from "../../components/Header";
+import MainChessboard from "../../components/MainChessboard";
+import MoveList from "../../components/MoveList";
+import OptionPanel from "../../components/OptionPanel";
+import styles from "../../styles/Play.module.css";
+import { truncateHash } from "../../utils";
 
 const Chess = typeof ChessJS === "function" ? ChessJS : ChessJS.Chess;
 
@@ -37,21 +46,23 @@ export interface MatchData {
   black: string;
 }
 
-const PlayPage: NextPage = () => {
-  const data: MatchData = {
-    matchId: "76c41497-ff3f-4287-9254-3632e3225264",
-    white: "0x246fd79365CA79BEB812B5635E8bE38453e2BF1C",
-    black: "0xC89337a02D3A3b913147aACF8F5b06Ad046663A9",
-  };
+interface PlayPageProps {
+  data: MatchData;
+}
 
+const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
   const [game, setGame] = useState(newGame);
   const [currentUser, setCurrentUser] = useState<string>("");
   const [socket, setSocket] = useState(null);
   const toast = useToast();
-  const newUserId = "opponent-connected";
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const currentPlayerSide: Orientation =
     data.white.toLowerCase() === currentUser.toLowerCase() ? "white" : "black";
+
+  const allowMoves = Object.values(data)
+    .map((item) => item.toLowerCase())
+    .includes(currentUser.toLowerCase());
 
   useEffect(() => {
     if (typeof window !== undefined) {
@@ -60,45 +71,49 @@ const PlayPage: NextPage = () => {
   }, [setCurrentUser]);
 
   useEffect(() => {
-    const socketURI = process.env.NEXT_PUBLIC_SERVER;
+    //1. When Socket Connects
+    const socketURI = process.env.NEXT_PUBLIC_WEBSOCKET;
     if (!socketURI) {
       setSocket(null);
       return;
     }
-
-    const newSocket = io(process.env.NEXT_PUBLIC_SERVER, {
+    onOpen();
+    const newSocket = io(process.env.NEXT_PUBLIC_WEBSOCKET, {
       path: "/ws/socket.io",
     });
     setSocket(newSocket);
     return () => {
       newSocket.close();
     };
-  }, [setSocket]);
+  }, [setSocket, onOpen]);
 
   useEffect(() => {
-    //When the currentUser joins the room
+    //2. When the currentUser joins the room
     if (socket && currentUser.length) {
       socket.emit("room", MATCH_ID, currentUser);
     }
   }, [socket, currentUser]);
 
+  //Memoizing the PGN wrt the game.
   const pgn = useMemo(() => game.pgn(), [game]);
 
   useEffect(() => {
+    //3. When the player makes a move
     if (socket) {
       socket.emit("move", pgn);
     }
   }, [pgn, socket]);
 
   useEffect(() => {
-    //When the currentUser joins the room
+    //4. When the currentUser joins the room
     const createToast = (account) => {
       if (
-        !toast.isActive(newUserId) &&
+        !toast.isActive("opponent-connected") &&
         account.toLowerCase() !== currentUser.toLowerCase()
       ) {
+        onClose();
         toast({
-          id: newUserId,
+          id: "opponent-connected",
           title: "Opponent Joined",
           description: `${truncateHash(account)} is now online`,
           isClosable: true,
@@ -117,7 +132,7 @@ const PlayPage: NextPage = () => {
         socket.off("room", createToast);
       }
     };
-  }, [socket, currentUser, toast]);
+  }, [socket, currentUser, onClose, toast]);
 
   useEffect(() => {
     const updateGameWithPGN = (newPGN) => {
@@ -153,30 +168,57 @@ const PlayPage: NextPage = () => {
   }, [socket, game]);
 
   return (
-    <Box height="100vh" className={styles.root}>
-      <Header account={currentUser} />
-      <Flex alignItems="center" justifyContent="space-between" px="16rem">
-        <Box flexBasis="65%">
-          <MainChessboard
-            game={game}
-            setGame={setGame}
-            boardOrientation={currentPlayerSide}
-          />
-        </Box>
-        <Box
-          display="flex"
-          flexDir="column"
-          flexBasis="35%"
-          bg="whiteAlpha.200"
-          borderRadius="4px"
-          padding="1rem"
-          height="560px"
-        >
-          <MoveList game={game} />
-          <OptionPanel matchData={data} currentPlayerSide={currentPlayerSide} />
-        </Box>
-      </Flex>
-    </Box>
+    <>
+      <Box height="100vh" className={styles.root}>
+        <Header account={currentUser} />
+        <Flex alignItems="center" justifyContent="space-between" px="16rem">
+          <Box flexBasis="65%">
+            <MainChessboard
+              game={game}
+              setGame={setGame}
+              boardOrientation={currentPlayerSide}
+              allowMoves={allowMoves}
+            />
+          </Box>
+          <Box
+            display="flex"
+            flexDir="column"
+            flexBasis="35%"
+            bg="whiteAlpha.200"
+            borderRadius="4px"
+            padding="1rem"
+            height="560px"
+          >
+            <MoveList game={game} />
+            <OptionPanel
+              matchData={data}
+              currentPlayerSide={currentPlayerSide}
+            />
+          </Box>
+        </Flex>
+      </Box>
+      <Modal
+        closeOnOverlayClick={false}
+        onClose={onClose}
+        isOpen={isOpen}
+        isCentered
+      >
+        <ModalOverlay />
+        <ModalContent alignItems="center" shadow="lg" bg="#171717">
+          <ModalHeader color="whiteAlpha.800">
+            Waiting for opponent to connect
+          </ModalHeader>
+          <ModalBody p={"2rem"}>
+            <CircularProgress
+              size="80px"
+              isIndeterminate
+              trackColor="blackAlpha.400"
+              color="green.500"
+            />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 
@@ -187,7 +229,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const cookies = nookies.get(ctx);
   const token = cookies.token;
 
-  //If the token does not exist or is cleared then redirect to login page.
+  //If the token does not exist or is cleared then redirect to home page.
   if (!token) {
     return {
       redirect: {
@@ -197,9 +239,25 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     };
   }
 
+  const { id } = ctx.params;
+
+  const response = await fetch(
+    process.env.NEXT_PUBLIC_SERVER + `/match?match_id=${id}`
+  );
+  const data = await response.json();
+
+  if (!data) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: "/404",
+      },
+    };
+  }
+
   return {
     props: {
-      token,
+      data,
     },
   };
 };
