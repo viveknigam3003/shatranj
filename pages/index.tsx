@@ -17,6 +17,26 @@ const Home: NextPage = () => {
   const toast = useToast();
   const router = useRouter();
 
+  const loginWithMetamask = async () => {
+    if (typeof window.ethereum === "undefined") {
+      toast({
+        title: "Could Not Connect to Metamask",
+        description: "Metamask is not installed on this browser",
+        isClosable: true,
+        duration: 5000,
+        status: "error",
+        variant: "subtle",
+      });
+      return null;
+    }
+
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+    const account: string = accounts[0];
+    return account;
+  };
+
   const generateToken = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
@@ -75,6 +95,8 @@ const Home: NextPage = () => {
         variant: "subtle",
       });
     }
+    const account = await loginWithMetamask();
+
     const token = await generateToken();
     cookie.set("token", JSON.stringify(token), {
       path: "/",
@@ -85,8 +107,10 @@ const Home: NextPage = () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const address = await signer.getAddress();
-    localStorage.setItem("user", address);
-    router.push("/play");
+    if (account && address.toLowerCase() === account.toLowerCase()) {
+      localStorage.setItem("user", account);
+      router.push("/play");
+    }
   };
 
   return (
