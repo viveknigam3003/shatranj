@@ -6,8 +6,9 @@ import { ethers } from "ethers";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Cookies } from "react-cookie";
+import { FaChessKing } from "react-icons/fa";
 import Web3Token from "web3-token";
 import { MetamaskIcon } from "../components/MetamaskIcon";
 import styles from "../styles/Home.module.css";
@@ -20,6 +21,14 @@ const Home: NextPage = () => {
   const toast = useToast();
   const router = useRouter();
   const [status, setStatus] = useState<ReqStatus>("idle");
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    const userToken = cookie.get("token");
+    if (userToken) {
+      setToken(userToken);
+    }
+  }, []);
 
   const loginWithMetamask = async () => {
     if (typeof window.ethereum === "undefined") {
@@ -107,7 +116,7 @@ const Home: NextPage = () => {
     const address = await signer.getAddress();
 
     if (account && address.toLowerCase() === account.toLowerCase()) {
-      const token = await generateToken();
+      const token: string = await generateToken();
       cookie.set("token", JSON.stringify(token), {
         path: "/",
         sameSite: true,
@@ -115,7 +124,16 @@ const Home: NextPage = () => {
       });
       localStorage.setItem("user", account);
       setStatus("success");
-      router.push("/play");
+      setToken(token);
+
+      toast({
+        title: "Successfully Connected",
+        description: "Click on Find a match button to find opponent",
+        isClosable: true,
+        duration: 5000,
+        status: "success",
+        variant: "subtle",
+      });
     } else {
       setStatus("error");
       return toast({
@@ -129,6 +147,36 @@ const Home: NextPage = () => {
       });
     }
   };
+
+  const FindMatchButton: React.FC = () => (
+    <Button
+      colorScheme="green"
+      width="fit-content"
+      leftIcon={<FaChessKing />}
+      size="lg"
+      onClick={() => {
+        console.log("Finding Match!");
+      }}
+      isLoading={status === "loading"}
+      loadingText="Finding opponent"
+    >
+      Find a match
+    </Button>
+  );
+
+  const ConnectMetamaskButton: React.FC = () => (
+    <Button
+      colorScheme="whiteAlpha"
+      width="fit-content"
+      leftIcon={<MetamaskIcon />}
+      size="lg"
+      onClick={connectToMetamask}
+      isLoading={status === "loading"}
+      loadingText="Connecting Metamask"
+    >
+      Connect wallet to play
+    </Button>
+  );
 
   return (
     <Flex
@@ -154,17 +202,7 @@ const Home: NextPage = () => {
               The classic game of chess. The modern prize for winning.
             </Text>
           </Box>
-          <Button
-            colorScheme="whiteAlpha"
-            width="fit-content"
-            leftIcon={<MetamaskIcon />}
-            size="lg"
-            onClick={connectToMetamask}
-            isLoading={status === "loading"}
-            loadingText="Connecting Metamask"
-          >
-            Connect wallet to play
-          </Button>
+          {token ? <FindMatchButton /> : <ConnectMetamaskButton />}
           <Text py="2" fontSize="0.8rem" color="gray.500">
             Shatranj currently supports only Metamask wallet. If you don&apos;t
             have an account, follow the instructions{" "}
