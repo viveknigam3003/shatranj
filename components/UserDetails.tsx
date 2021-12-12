@@ -18,7 +18,7 @@ const UserDetails: React.FC<Props & BoxProps> = ({
   return (
     <Box {...props}>
       <HStack alignItems="flex-start" justifyContent="flex-start" height="100%">
-        <Text fontWeight="600">{username}</Text>
+        {username && <Text fontWeight="600">{username}</Text>}
         <Tag variant="subtle" colorScheme="whiteAlpha">
           <TagLabel fontSize="0.8rem">{truncatedAccount}</TagLabel>
         </Tag>
