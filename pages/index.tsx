@@ -1,6 +1,16 @@
 import { Button } from "@chakra-ui/button";
 import { Image } from "@chakra-ui/image";
 import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
+import {
+  CircularProgress,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  useDisclosure,
+} from "@chakra-ui/react";
 import { ethers } from "ethers";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
@@ -23,6 +33,7 @@ const Home: NextPage = () => {
   const router = useRouter();
   const [status, setStatus] = useState<ReqStatus>("idle");
   const [token, setToken] = useState("");
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     const userToken = cookie.get("token");
@@ -114,7 +125,8 @@ const Home: NextPage = () => {
     if (!isEthereumPresent()) return;
 
     setStatus("loading");
-    await changeNetwork("polygon-testnet-mumbai");
+    console.log(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
+    await changeNetwork(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
 
     const account = await loginWithMetamask();
 
@@ -150,7 +162,13 @@ const Home: NextPage = () => {
 
   const findMatchOpponent = async () => {
     console.log("Finding a match");
-    router.push("/play");
+    onOpen();
+  };
+
+  const handleGracefulClose = () => {
+    console.log("Matchmaking request cancelled!");
+    setStatus("idle");
+    onClose();
   };
 
   const FindMatchButton: React.FC = () => (
@@ -182,61 +200,98 @@ const Home: NextPage = () => {
   );
 
   return (
-    <Flex
-      height="100vh"
-      className={styles.root}
-      flexDir="column"
-      justifyContent="space-between"
-    >
-      <Flex flexWrap={{ base: "wrap", lg: "nowrap" }} height="100%">
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="center"
-          px={{ base: "2rem", lg: "8rem" }}
-          flexBasis="50%"
-          className={styles.hero}
-        >
-          <Box py="2rem">
-            <Heading fontSize={{ base: "2.5rem", lg: "5rem", xl: "6rem" }}>
-              Shatranj
-            </Heading>
-            <Text fontSize={{ base: "1.25rem", xl: "1.5rem" }} color="gray.500">
-              The classic game of chess. The modern prize for winning.
+    <>
+      <Flex
+        height="100vh"
+        className={styles.root}
+        flexDir="column"
+        justifyContent="space-between"
+      >
+        <Flex flexWrap={{ base: "wrap", lg: "nowrap" }} height="100%">
+          <Box
+            display="flex"
+            flexDirection="column"
+            justifyContent="center"
+            px={{ base: "2rem", lg: "8rem" }}
+            flexBasis="50%"
+            className={styles.hero}
+          >
+            <Box py="2rem">
+              <Heading fontSize={{ base: "2.5rem", lg: "5rem", xl: "6rem" }}>
+                Shatranj
+              </Heading>
+              <Text
+                fontSize={{ base: "1.25rem", xl: "1.5rem" }}
+                color="gray.500"
+              >
+                The classic game of chess. The modern prize for winning.
+              </Text>
+            </Box>
+            {token ? <FindMatchButton /> : <ConnectMetamaskButton />}
+            <Text py="2" fontSize="0.8rem" color="gray.500">
+              Shatranj currently supports only Metamask wallet. If you
+              don&apos;t have an account, follow the instructions{" "}
+              <a
+                className={styles.link}
+                href="https://metamask.io/download.html"
+              >
+                here
+              </a>{" "}
+              to install Metamask
             </Text>
           </Box>
-          {token ? <FindMatchButton /> : <ConnectMetamaskButton />}
-          <Text py="2" fontSize="0.8rem" color="gray.500">
-            Shatranj currently supports only Metamask wallet. If you don&apos;t
-            have an account, follow the instructions{" "}
-            <a className={styles.link} href="https://metamask.io/download.html">
-              here
-            </a>{" "}
-            to install Metamask
-          </Text>
-        </Box>
-        <Center flexBasis={{ md: "50%" }}>
-          <Image alt="Rook" src="/rook.png" />
-        </Center>
+          <Center flexBasis={{ md: "50%" }}>
+            <Image alt="Rook" src="/rook.png" />
+          </Center>
+        </Flex>
+        <Flex
+          width="100%"
+          flexDir="column"
+          justifyContent="center"
+          alignItems="center"
+          className={styles.footer}
+        >
+          <Text color="gray.500">Developed by Team Web23</Text>
+          <HStack color="gray.500" p="2">
+            <Link passHref href="/about">
+              <Text className={styles.link}>About</Text>
+            </Link>
+            <Link passHref href="/instruction">
+              <Text className={styles.link}>How to play</Text>
+            </Link>
+          </HStack>
+        </Flex>
       </Flex>
-      <Flex
-        width="100%"
-        flexDir="column"
-        justifyContent="center"
-        alignItems="center"
-        className={styles.footer}
+      <Modal
+        closeOnOverlayClick={false}
+        onClose={handleGracefulClose}
+        isOpen={isOpen}
+        isCentered
       >
-        <Text color="gray.500">Developed by Team Web23</Text>
-        <HStack color="gray.500" p="2">
-          <Link passHref href="/about">
-            <Text className={styles.link}>About</Text>
-          </Link>
-          <Link passHref href="/instruction">
-            <Text className={styles.link}>How to play</Text>
-          </Link>
-        </HStack>
-      </Flex>
-    </Flex>
+        <ModalOverlay />
+        <ModalContent alignItems="center" shadow="lg" bg="#171717">
+          <ModalHeader color="whiteAlpha.800">Finding Opponent</ModalHeader>
+          <ModalBody>
+            <CircularProgress
+              size="80px"
+              isIndeterminate
+              trackColor="blackAlpha.400"
+              color="green.500"
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleGracefulClose}
+              colorScheme="red"
+            >
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 
