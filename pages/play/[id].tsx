@@ -2,11 +2,12 @@ import { Box, Flex, Text } from "@chakra-ui/layout";
 import {
   CircularProgress,
   Modal,
-  ModalBody, ModalContent,
+  ModalBody,
+  ModalContent,
   ModalHeader,
   ModalOverlay,
   useDisclosure,
-  useToast
+  useToast,
 } from "@chakra-ui/react";
 import * as ChessJS from "chess.js";
 import { GetServerSidePropsContext, NextPage } from "next";
@@ -58,7 +59,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
     onOpen: openGameOver,
     onClose: closeGameOver,
   } = useDisclosure();
-  const [gameState, setGameState] = useState({ winner: null, reason: "" });
+  const [gameState, setGameState] = useState({ winner: "", reason: "" });
 
   const currentPlayerSide: Orientation =
     data.white.toLowerCase() === currentUser.toLowerCase() ? "white" : "black";
@@ -247,8 +248,12 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
             Game Over: {gameState.winner} won the game.
           </ModalHeader>
           <ModalBody p={"2rem"}>
-            <Text color="whiteAlpha.800" paddingBottom="1rem">Reason: {gameState.reason}</Text>
-            {/* <Text fontWeight="700" color="whiteAlpha.800">$ASHF 2000 transferred to {data[gameState.winner]}</Text> */}
+            <Text color="whiteAlpha.800" paddingBottom="1rem">
+              Reason: {gameState.reason}
+            </Text>
+            <Text textAlign="center" fontWeight="700" color="whiteAlpha.800">
+              $ASHF 2000 transferred to {data[gameState.winner]}
+            </Text>
           </ModalBody>
         </ModalContent>
       </Modal>
