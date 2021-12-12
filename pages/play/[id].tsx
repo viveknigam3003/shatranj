@@ -1,13 +1,13 @@
 import { Box, Flex } from "@chakra-ui/layout";
 import {
-    CircularProgress,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalHeader,
-    ModalOverlay,
-    useDisclosure,
-    useToast
+  CircularProgress,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  useDisclosure,
+  useToast
 } from "@chakra-ui/react";
 import * as ChessJS from "chess.js";
 import { GetServerSidePropsContext, NextPage } from "next";
@@ -37,8 +37,6 @@ const updateGame = (
 };
 
 const newGame = new Chess();
-
-const MATCH_ID = 1;
 
 export interface MatchData {
   matchId: string;
@@ -90,9 +88,9 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
   useEffect(() => {
     //2. When the currentUser joins the room
     if (socket && currentUser.length) {
-      socket.emit("room", MATCH_ID, currentUser);
+      socket.emit("room", data.matchId, currentUser);
     }
-  }, [socket, currentUser]);
+  }, [socket, data, currentUser]);
 
   //Memoizing the PGN wrt the game.
   const pgn = useMemo(() => game.pgn(), [game]);
@@ -112,6 +110,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
         account.toLowerCase() !== currentUser.toLowerCase()
       ) {
         onClose();
+        socket.emit("ack", `${currentPlayerSide} joined`);
         toast({
           id: "opponent-connected",
           title: "Opponent Joined",
@@ -132,7 +131,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
         socket.off("room", createToast);
       }
     };
-  }, [socket, currentUser, onClose, toast]);
+  }, [socket, currentUser, onClose, currentPlayerSide, toast]);
 
   useEffect(() => {
     const updateGameWithPGN = (newPGN) => {
