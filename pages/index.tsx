@@ -1,7 +1,6 @@
 import { Button } from "@chakra-ui/button";
 import { Image } from "@chakra-ui/image";
 import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
-import { useToast } from "@chakra-ui/toast";
 import { ethers } from "ethers";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
@@ -11,6 +10,8 @@ import { Cookies } from "react-cookie";
 import { FaChessKing } from "react-icons/fa";
 import Web3Token from "web3-token";
 import { MetamaskIcon } from "../components/MetamaskIcon";
+import { useCustomToast } from "../hooks/useCustomToast";
+import { networks } from "../network-config";
 import styles from "../styles/Home.module.css";
 
 const cookie = new Cookies();
@@ -18,7 +19,7 @@ const cookie = new Cookies();
 type ReqStatus = "idle" | "loading" | "success" | "error";
 
 const Home: NextPage = () => {
-  const toast = useToast();
+  const { createToast } = useCustomToast();
   const router = useRouter();
   const [status, setStatus] = useState<ReqStatus>("idle");
   const [token, setToken] = useState("");
@@ -30,16 +31,42 @@ const Home: NextPage = () => {
     }
   }, []);
 
+  const isEthereumPresent = (): Boolean => {
+    if (!window.ethereum) {
+      createToast(
+        "Could Not Find Metamask",
+        "error",
+        "Please install and activate the metamask extension!"
+      );
+      return false;
+    }
+    return true;
+  };
+
+  const changeNetwork = async (networkName: string) => {
+    if (!isEthereumPresent()) return;
+    try {
+      return await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [networks[networkName]],
+      });
+    } catch (err) {
+      createToast(
+        "Could not connect to ethereum network",
+        "error",
+        err.message
+      );
+      return false;
+    }
+  };
+
   const loginWithMetamask = async () => {
     if (typeof window.ethereum === "undefined") {
-      toast({
-        title: "Could Not Connect to Metamask",
-        description: "Metamask is not installed on this browser",
-        isClosable: true,
-        duration: 5000,
-        status: "error",
-        variant: "subtle",
-      });
+      createToast(
+        "Could Not Connect to Metamask",
+        "error",
+        "Metamask is not installed on this browser"
+      );
       return null;
     }
 
@@ -61,54 +88,34 @@ const Home: NextPage = () => {
         } catch (err) {
           const { reason } = err;
           if (reason === "unknown account #0") {
-            return toast({
-              title: "Could Not Connect to Metamask",
-              description:
-                "Have you unlocked metamask and are connected to this page?",
-              isClosable: true,
-              duration: 5000,
-              status: "error",
-              variant: "subtle",
-            });
+            return createToast(
+              "Could Not Connect to Metamask",
+              "error",
+              "Have you unlocked metamask and are connected to this page?"
+            );
           }
 
-          return toast({
-            title: "Could Not Connect to Metamask",
-            description: err.message,
-            isClosable: true,
-            duration: 5000,
-            status: "error",
-            variant: "subtle",
-          });
+          return createToast(
+            "Could Not Connect to Metamask",
+            "error",
+            err.message
+          );
         }
       }, "1d");
     } catch (err) {
       if (/returns a signature/.test(err.toString())) {
         return;
       }
-      return toast({
-        title: "Could Not Connect to Metamask",
-        description: err.message,
-        isClosable: true,
-        duration: 5000,
-        status: "error",
-        variant: "subtle",
-      });
+      return createToast("Could Not Connect to Metamask", "error", err.message);
     }
   };
 
   const connectToMetamask = async () => {
-    if (!window.ethereum) {
-      return toast({
-        title: "Could Not Find Metamask",
-        description: "Please install and activate the metamask extension!",
-        isClosable: true,
-        duration: 5000,
-        status: "error",
-        variant: "subtle",
-      });
-    }
+    if (!isEthereumPresent()) return;
+
     setStatus("loading");
+    await changeNetwork("polygon-testnet-mumbai");
+
     const account = await loginWithMetamask();
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -126,31 +133,24 @@ const Home: NextPage = () => {
       setStatus("success");
       setToken(token);
 
-      toast({
-        title: "Successfully Connected",
-        description: "Click on Find a match button to find opponent",
-        isClosable: true,
-        duration: 5000,
-        status: "success",
-        variant: "subtle",
-      });
+      createToast(
+        "Successfully Connected",
+        "success",
+        "Click on Find a match button to find opponent"
+      );
     } else {
       setStatus("error");
-      return toast({
-        title: "Could not connect wallet",
-        description:
-          "An unexpected error occured while connecting your account",
-        isClosable: true,
-        duration: 5000,
-        status: "error",
-        variant: "subtle",
-      });
+      return createToast(
+        "Could not connect wallet",
+        "error",
+        "An unexpected error occured while connecting your account"
+      );
     }
   };
 
   const findMatchOpponent = async () => {
     console.log("Finding a match");
-    router.push("/play")
+    router.push("/play");
   };
 
   const FindMatchButton: React.FC = () => (
