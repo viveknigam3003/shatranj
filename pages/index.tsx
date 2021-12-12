@@ -11,6 +11,7 @@ import {
   ModalOverlay,
   useDisclosure,
 } from "@chakra-ui/react";
+import axios from "axios";
 import { ethers } from "ethers";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
@@ -34,6 +35,8 @@ const Home: NextPage = () => {
   const [status, setStatus] = useState<ReqStatus>("idle");
   const [token, setToken] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [uuid, setUuid] = useState("");
+  const [matchData, setMatchData] = useState(null);
 
   useEffect(() => {
     const userToken = cookie.get("token");
@@ -163,12 +166,72 @@ const Home: NextPage = () => {
   const findMatchOpponent = async () => {
     console.log("Finding a match");
     onOpen();
+
+    const username = localStorage.getItem("user");
+    const uri = process.env.NEXT_PUBLIC_SERVER + "/match";
+    const data = {
+      username,
+      token_bid: 1000,
+      min_bid: 1000,
+    };
+
+    try {
+      const response = await axios.post(uri, data);
+      console.log(response.data);
+      setUuid(response.data.UUID);
+    } catch (e) {
+      console.log(e);
+    }
   };
 
-  const handleGracefulClose = () => {
+  useEffect(() => {
+    if (uuid) {
+      const sse = new EventSource(
+        process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
+      );
+      sse.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.match_id) {
+          console.log("Match Found!");
+          setMatchData({
+            matchId: data.match_id,
+            white: data.white,
+            black: data.black,
+          });
+          sse.close();
+          onClose();
+        }
+      };
+
+      sse.onerror = () => {
+        createToast(
+          "Couldn't fetch opponent",
+          "error",
+          "An unexpected error occured while fetching opponent. Please check your internet connection."
+        );
+        sse.close();
+        onClose();
+      };
+
+      return () => {
+        sse.close();
+      };
+    }
+  }, [uuid, onClose, createToast]);
+
+  useEffect(() => {
+    console.log(matchData);
+  }, [matchData]);
+
+  const handleGracefulClose = async (uuid: string) => {
     console.log("Matchmaking request cancelled!");
-    setStatus("idle");
-    onClose();
+    const response = await axios.get(
+      process.env.NEXT_PUBLIC_SERVER + `/match/cancel?uuid=${uuid}`
+    );
+    if (response.status === 200) {
+      setStatus("idle");
+      onClose();
+    }
   };
 
   const FindMatchButton: React.FC = () => (
@@ -264,7 +327,7 @@ const Home: NextPage = () => {
       </Flex>
       <Modal
         closeOnOverlayClick={false}
-        onClose={handleGracefulClose}
+        onClose={() => handleGracefulClose(uuid)}
         isOpen={isOpen}
         isCentered
       >
@@ -283,7 +346,7 @@ const Home: NextPage = () => {
             <Button
               size="sm"
               variant="ghost"
-              onClick={handleGracefulClose}
+              onClick={() => handleGracefulClose(uuid)}
               colorScheme="red"
             >
               Cancel

@@ -60,13 +60,13 @@ const PlayPage: NextPage = () => {
   }, [setCurrentUser]);
 
   useEffect(() => {
-    const socketURI = process.env.NEXT_PUBLIC_WEBSOCKET;
+    const socketURI = process.env.NEXT_PUBLIC_SERVER;
     if (!socketURI) {
       setSocket(null);
       return;
     }
 
-    const newSocket = io(process.env.NEXT_PUBLIC_WEBSOCKET, {
+    const newSocket = io(process.env.NEXT_PUBLIC_SERVER, {
       path: "/ws/socket.io",
     });
     setSocket(newSocket);
