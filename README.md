@@ -4,6 +4,8 @@ Official submission by **Team Web23** to **[BUIDL IT](https://buidlit.polygon.te
 
 ![Languages](https://img.shields.io/github/languages/count/viveknigam3003/shatranj) ![Top Language](https://img.shields.io/github/languages/top/viveknigam3003/shatranj) ![File Count](https://img.shields.io/github/directory-file-count/viveknigam3003/shatranj) ![Repo Size](https://img.shields.io/github/repo-size/viveknigam3003/shatranj) ![Lines of Code](https://img.shields.io/tokei/lines/github/viveknigam3003/shatranj) ![Issues](https://img.shields.io/github/issues/viveknigam3003/shatranj) ![License](https://img.shields.io/github/license/viveknigam3003/shatranj) ![Activity](https://img.shields.io/github/commit-activity/m/viveknigam3003/shatranj) ![Last Commit](https://img.shields.io/github/last-commit/viveknigam3003/shatranj) ![Maintained](https://img.shields.io/maintenance/yes/2021)
 
+![Header](repository-assets/Header.jpeg)
+
 ## Background
 During the lockdown in light of the pandemic, we all witnessed a sharp increase in the popularity of chess.
 As most sporting action shut down because of the lockdown, chess found new life online with several tournaments taking place. In an interview to PTI, the 51-year-old maestro Viswanathan Anand touched upon a variety of subjects, including the immense popularity of chess-based Netflix drama 'The Queen's Gambit, his new role of a mentor to youngsters and an upcoming biopic on his remarkable career and life.
@@ -12,8 +14,12 @@ As most sporting action shut down because of the lockdown, chess found new life 
 
 Reputed chess website chess.com declared that it's subscriber base shot up significantly after the series's release. With Samay Raina, the organizer of Comedians On Board and an avid Chess Enthusiast onboard BUIDL IT, we decided to try our hands over the ancient game of Shatranj with new Asharfi, cryptocurrency, which just like Chess boomed in Indian households this year.
 
+![Header](repository-assets/Shatranj-2.jpeg)
+
 ## About Shatranj
 we know that Chess games are widely popular today. Shatranj increases the incentive and the stake to play this classic ancient game with Web3 tokens we call Asharfi (ancient coins in India) $ASHF. Both players of the game that connect unsing our special matchmaking algorithm agree on a bid amount and the winner of the game takes all the $ASHF (game token) in the prize pool.
+
+![Header](repository-assets/Shatranj-1.jpeg)
 
 ## Technology Stack
 ### Frontend
@@ -42,8 +48,18 @@ we know that Chess games are widely popular today. Shatranj increases the incent
 9. Open Zeppelin for ERC20 Contract
 
 ## Implementation and Deployment
+The Frontend of the application is deployed over Vercel and it harnesses the capabilities of the aforementioned Technology Stack.
+[System Architecture]
 
 ## Prize Tracks
+ - Hackathon Overalls
+ - NFT and Gaming Track
+ - Web3 Integration with Web2
+ - DeFi Track
+ - Best Tooling
+ - Crypto Chess Dapp - Samay Raina
+ - StackOS
+ - Superfluid
 
 ## Team
 
