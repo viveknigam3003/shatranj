@@ -6,6 +6,7 @@ import { ethers } from "ethers";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
 import Link from "next/link";
+import { useState } from "react";
 import { Cookies } from "react-cookie";
 import Web3Token from "web3-token";
 import { MetamaskIcon } from "../components/MetamaskIcon";
@@ -13,9 +14,12 @@ import styles from "../styles/Home.module.css";
 
 const cookie = new Cookies();
 
+type ReqStatus = "idle" | "loading" | "success" | "error";
+
 const Home: NextPage = () => {
   const toast = useToast();
   const router = useRouter();
+  const [status, setStatus] = useState<ReqStatus>("idle");
 
   const loginWithMetamask = async () => {
     if (typeof window.ethereum === "undefined") {
@@ -95,21 +99,34 @@ const Home: NextPage = () => {
         variant: "subtle",
       });
     }
+    setStatus("loading");
     const account = await loginWithMetamask();
-
-    const token = await generateToken();
-    cookie.set("token", JSON.stringify(token), {
-      path: "/",
-      sameSite: true,
-      maxAge: 60 * 60 * 24,
-    });
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const address = await signer.getAddress();
+
     if (account && address.toLowerCase() === account.toLowerCase()) {
+      const token = await generateToken();
+      cookie.set("token", JSON.stringify(token), {
+        path: "/",
+        sameSite: true,
+        maxAge: 60 * 60 * 24,
+      });
       localStorage.setItem("user", account);
+      setStatus("success");
       router.push("/play");
+    } else {
+      setStatus("error");
+      return toast({
+        title: "Could not connect wallet",
+        description:
+          "An unexpected error occured while connecting your account",
+        isClosable: true,
+        duration: 5000,
+        status: "error",
+        variant: "subtle",
+      });
     }
   };
 
@@ -143,6 +160,8 @@ const Home: NextPage = () => {
             leftIcon={<MetamaskIcon />}
             size="lg"
             onClick={connectToMetamask}
+            isLoading={status === "loading"}
+            loadingText="Connecting Metamask"
           >
             Connect wallet to play
           </Button>
