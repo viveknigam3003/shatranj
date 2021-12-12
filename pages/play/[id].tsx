@@ -1,9 +1,8 @@
-import { Box, Flex } from "@chakra-ui/layout";
+import { Box, Flex, Text } from "@chakra-ui/layout";
 import {
   CircularProgress,
   Modal,
-  ModalBody,
-  ModalContent,
+  ModalBody, ModalContent,
   ModalHeader,
   ModalOverlay,
   useDisclosure,
@@ -54,6 +53,12 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
   const [socket, setSocket] = useState(null);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isGameOverOpen,
+    onOpen: openGameOver,
+    onClose: closeGameOver,
+  } = useDisclosure();
+  const [gameState, setGameState] = useState({ winner: null, reason: "" });
 
   const currentPlayerSide: Orientation =
     data.white.toLowerCase() === currentUser.toLowerCase() ? "white" : "black";
@@ -152,7 +157,13 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
 
   useEffect(() => {
     const toastUserDisconnect = (account) => {
-      console.log(`${truncateHash(account)} left the game`);
+      onClose();
+      openGameOver();
+      setGameState((nextState) => ({
+        ...nextState,
+        reason: `Opponent (${truncateHash(account)}) left the game`,
+        winner: currentPlayerSide,
+      }));
     };
 
     if (socket) {
@@ -164,7 +175,19 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
         socket.off("disconnect", toastUserDisconnect);
       }
     };
-  }, [socket, game]);
+  }, [socket, currentPlayerSide, onClose, openGameOver, game]);
+
+  useEffect(() => {
+    if (game.in_checkmate()) {
+      openGameOver();
+      const currentWinner = game.turn() === "w" ? "black" : "white";
+      setGameState((nextState) => ({
+        ...nextState,
+        reason: "Win by checkmate",
+        winner: currentWinner,
+      }));
+    }
+  }, [game, openGameOver]);
 
   return (
     <>
@@ -214,6 +237,18 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
               trackColor="blackAlpha.400"
               color="green.500"
             />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+      <Modal onClose={closeGameOver} isOpen={isGameOverOpen} isCentered>
+        <ModalOverlay />
+        <ModalContent alignItems="center" shadow="lg" bg="#171717">
+          <ModalHeader color="whiteAlpha.800">
+            Game Over: {gameState.winner} won the game.
+          </ModalHeader>
+          <ModalBody p={"2rem"}>
+            <Text color="whiteAlpha.800" paddingBottom="1rem">Reason: {gameState.reason}</Text>
+            {/* <Text fontWeight="700" color="whiteAlpha.800">$ASHF 2000 transferred to {data[gameState.winner]}</Text> */}
           </ModalBody>
         </ModalContent>
       </Modal>
