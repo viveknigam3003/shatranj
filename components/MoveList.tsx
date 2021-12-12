@@ -9,7 +9,7 @@ import {
   Tr,
 } from "@chakra-ui/react";
 import React, { useMemo } from "react";
-import { ChessGame } from "../pages/play";
+import { ChessGame } from "../pages/play/[id]";
 
 interface MoveListProps {
   game: ChessGame;

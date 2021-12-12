@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import React from "react";
-import { MatchData, Orientation } from "../pages/play";
+import { MatchData, Orientation } from "../pages/play/[id]";
 import UserDetails from "./UserDetails";
 
 interface OptionPanelProps {
