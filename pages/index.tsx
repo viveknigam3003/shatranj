@@ -148,15 +148,18 @@ const Home: NextPage = () => {
     }
   };
 
+  const findMatchOpponent = async () => {
+    console.log("Finding a match");
+    router.push("/play")
+  };
+
   const FindMatchButton: React.FC = () => (
     <Button
       colorScheme="green"
       width="fit-content"
       leftIcon={<FaChessKing />}
       size="lg"
-      onClick={() => {
-        console.log("Finding Match!");
-      }}
+      onClick={findMatchOpponent}
       isLoading={status === "loading"}
       loadingText="Finding opponent"
     >
