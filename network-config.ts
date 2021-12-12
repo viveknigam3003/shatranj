@@ -11,6 +11,7 @@ interface AddEthereumChainParameter {
   iconUrls?: string[]; // Currently ignored.
 }
 
+//https://chainid.network/chains.json
 export const networks: { [key: string]: AddEthereumChainParameter } = {
   "polygon-testnet-mumbai": {
     chainName: "Polygon Testnet Mumbai",
