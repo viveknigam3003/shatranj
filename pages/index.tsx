@@ -9,23 +9,20 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  useDisclosure
+  useDisclosure,
 } from "@chakra-ui/react";
 import axios from "axios";
-import { ethers } from "ethers";
+import Moralis from "moralis";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Cookies } from "react-cookie";
 import { FaChessKing } from "react-icons/fa";
-import Web3Token from "web3-token";
+import { useMoralis, useWeb3Transfer } from "react-moralis";
 import { MetamaskIcon } from "../components/MetamaskIcon";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
 import styles from "../styles/Home.module.css";
-
-const cookie = new Cookies();
 
 type ReqStatus = "idle" | "loading" | "success" | "error";
 
@@ -33,16 +30,11 @@ const Home: NextPage = () => {
   const { createToast } = useCustomToast();
   const router = useRouter();
   const [status, setStatus] = useState<ReqStatus>("idle");
-  const [token, setToken] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [uuid, setUuid] = useState("");
-
-  useEffect(() => {
-    const userToken = cookie.get("token");
-    if (userToken) {
-      setToken(userToken);
-    }
-  }, []);
+  const { authenticate, isAuthenticated, user, isWeb3Enabled, enableWeb3 } = useMoralis();
+  const { fetch, error, isFetching } = useWeb3Transfer();
+  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
   const isEthereumPresent = (): Boolean => {
     if (!window.ethereum) {
@@ -73,56 +65,6 @@ const Home: NextPage = () => {
     }
   };
 
-  const loginWithMetamask = async () => {
-    if (typeof window.ethereum === "undefined") {
-      createToast(
-        "Could Not Connect to Metamask",
-        "error",
-        "Metamask is not installed on this browser"
-      );
-      return null;
-    }
-
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    const account: string = accounts[0];
-    return account;
-  };
-
-  const generateToken = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-
-    try {
-      return await Web3Token.sign(async (msg) => {
-        try {
-          return await signer.signMessage(msg);
-        } catch (err) {
-          const { reason } = err;
-          if (reason === "unknown account #0") {
-            return createToast(
-              "Could Not Connect to Metamask",
-              "error",
-              "Have you unlocked metamask and are connected to this page?"
-            );
-          }
-
-          return createToast(
-            "Could Not Connect to Metamask",
-            "error",
-            err.message
-          );
-        }
-      }, "1d");
-    } catch (err) {
-      if (/returns a signature/.test(err.toString())) {
-        return;
-      }
-      return createToast("Could Not Connect to Metamask", "error", err.message);
-    }
-  };
-
   const connectToMetamask = async () => {
     if (!isEthereumPresent()) return;
 
@@ -130,42 +72,32 @@ const Home: NextPage = () => {
     console.log(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
     await changeNetwork(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
 
-    const account = await loginWithMetamask();
-
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const address = await signer.getAddress();
-
-    if (account && address.toLowerCase() === account.toLowerCase()) {
-      const token: string = await generateToken();
-      cookie.set("token", JSON.stringify(token), {
-        path: "/",
-        sameSite: true,
-        maxAge: 60 * 60 * 24,
-      });
-      localStorage.setItem("user", account);
-      setStatus("success");
-      setToken(token);
-
-      createToast(
-        "Successfully Connected",
-        "success",
-        "Click on Find a match button to find opponent"
-      );
-    } else {
-      setStatus("error");
-      return createToast(
-        "Could not connect wallet",
-        "error",
-        "An unexpected error occured while connecting your account"
-      );
-    }
+    return await authenticate({
+      onSuccess: () => {
+        setStatus("success");
+        createToast(
+          "Successfully Connected",
+          "success",
+          "Click on Find a match button to find opponent"
+        );
+      },
+      onError: () => {
+        setStatus("error");
+        createToast(
+          "Could not connect wallet",
+          "error",
+          "An unexpected error occured while connecting your account"
+        );
+      },
+    });
   };
 
   const findMatchOpponent = async () => {
-    onOpen();
+    enableWeb3({onSuccess: () => onOpen()});
+    if(!isWeb3Enabled) return;
+    if (!user) return;
 
-    const username = localStorage.getItem("user");
+    const username = user.attributes.ethAddress;
     const uri = process.env.NEXT_PUBLIC_SERVER + "/match";
     const data = {
       username,
@@ -179,6 +111,35 @@ const Home: NextPage = () => {
     } catch (e) {
       console.log(e);
     }
+  };
+
+  const handleGracefulClose = async (uuid: string) => {
+    console.log("Matchmaking request cancelled!");
+    const response = await axios.get(
+      process.env.NEXT_PUBLIC_SERVER + `/match/cancel?uuid=${uuid}`
+    );
+    if (response.status === 200) {
+      setStatus("idle");
+      onClose();
+    }
+  };
+
+  //Transaction Functions
+  const transferASHF = async (value: number, to: string) => {
+    return await fetch({
+      params: {
+        amount: Moralis.Units.Token(value, 18),
+        receiver: to,
+        type: "erc20",
+        contractAddress: contractAddress,
+      },
+      onSuccess: () => {
+        createToast(`${value} ASHF received successfully`, "success");
+      },
+      onError: (e) => {
+        createToast(`ASHF transaction failed`, "error", e.message);
+      },
+    });
   };
 
   useEffect(() => {
@@ -212,25 +173,16 @@ const Home: NextPage = () => {
     }
   }, [uuid, onClose, router, createToast]);
 
-  const handleGracefulClose = async (uuid: string) => {
-    console.log("Matchmaking request cancelled!");
-    const response = await axios.get(
-      process.env.NEXT_PUBLIC_SERVER + `/match/cancel?uuid=${uuid}`
-    );
-    if (response.status === 200) {
-      setStatus("idle");
-      onClose();
-    }
-  };
-
   const FindMatchButton: React.FC = () => (
     <Button
       colorScheme="green"
       width="fit-content"
       leftIcon={<FaChessKing />}
       size="lg"
-      onClick={findMatchOpponent}
-      isLoading={status === "loading"}
+      onClick={async () =>
+        await transferASHF(200, "")
+      }
+      isLoading={isFetching}
       loadingText="Finding opponent"
     >
       Find a match
@@ -279,7 +231,7 @@ const Home: NextPage = () => {
                 The classic game of chess. The modern prize for winning.
               </Text>
             </Box>
-            {token ? <FindMatchButton /> : <ConnectMetamaskButton />}
+            {isAuthenticated ? <FindMatchButton /> : <ConnectMetamaskButton />}
             <Text py="2" fontSize="0.8rem" color="gray.500">
               Shatranj currently supports only Metamask wallet. If you
               don&apos;t have an account, follow the instructions{" "}

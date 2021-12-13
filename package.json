@@ -16,19 +16,16 @@
     "@openzeppelin/contracts": "^4.4.0",
     "axios": "^0.24.0",
     "chess.js": "^0.12.0",
-    "cookie": "^0.4.1",
-    "ethers": "^5.5.2",
     "framer-motion": "^4.1.17",
+    "moralis": "^0.0.155",
     "next": "^12.0.7",
-    "nookies": "^2.5.2",
     "react": "17.0.2",
     "react-chessboard": "^1.0.0",
-    "react-cookie": "^4.1.1",
     "react-dom": "17.0.2",
     "react-icons": "^4.3.1",
+    "react-moralis": "^0.3.1",
     "socket.io-client": "^4.4.0",
-    "uninstall": "0.0.0",
-    "web3-token": "^0.1.32"
+    "web3": "^1.6.1"
   },
   "devDependencies": {
     "@types/chess.js": "^0.11.2",
