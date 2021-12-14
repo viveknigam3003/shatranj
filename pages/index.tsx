@@ -4,16 +4,17 @@ import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
 import { useDisclosure } from "@chakra-ui/react";
 import Moralis from "moralis";
 import { NextPage } from "next";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { FaChessKing } from "react-icons/fa";
 import { useMoralis } from "react-moralis";
 import Footer from "../components/Footer";
-import Matchmaking from "../components/Matchmaking";
 import { MetamaskIcon } from "../components/MetamaskIcon";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
 import styles from "../styles/Home.module.css";
 import { erc20token } from "../token-config";
+const Matchmaking = dynamic(() => import("../components/Matchmaking"));
 
 export type ReqStatus = "idle" | "loading" | "success" | "error";
 
@@ -49,7 +50,7 @@ const Home: NextPage = () => {
 
   /**
    * Requests to add new network if not present in wallet. Else switches to the network.
-   * @param networkName Public Chain Network Name (From network-config file) 
+   * @param networkName Public Chain Network Name (From network-config file)
    */
   const changeNetwork = async (networkName: string) => {
     if (!isEthereumPresent()) return;
@@ -84,7 +85,7 @@ const Home: NextPage = () => {
   /**
    * Adds the ASHF (Asharfi) token to the current user's wallet
    * @param user Moralis User Instance
-   * @returns 
+   * @returns
    */
   const addASHFToken = async (
     user: Moralis.User<Moralis.Attributes>
