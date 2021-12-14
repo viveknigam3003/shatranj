@@ -46,4 +46,14 @@ export const networks: { [key: string]: AddEthereumChainParameter } = {
     chainId: `0x${Number(137).toString(16)}`,
     blockExplorerUrls: ["https://polygonscan.com/"],
   },
+  localhost: {
+    chainName: "Localhost 8545",
+    nativeCurrency: {
+      name: "ETH",
+      symbol: "ETH",
+      decimals: 18
+    },
+    rpcUrls: ['https://127.0.0.1:8545'],
+    chainId: `0x${Number(1337).toString(16)}`
+  }
 };
