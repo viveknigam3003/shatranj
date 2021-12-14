@@ -3,14 +3,17 @@ import {
   InputGroup,
   InputLeftAddon,
   Text,
-  VStack
+  VStack,
 } from "@chakra-ui/react";
 import axios from "axios";
 import Moralis from "moralis";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
+import web3 from "web3";
+import ashf from "../abis/Asharfi.json";
 import { useCustomToast } from "../hooks/useCustomToast";
+import { networks } from "../network-config";
 import { ReqStatus } from "../pages";
 import { erc20token } from "../token-config";
 import CustomModal from "./CustomModal";
@@ -24,16 +27,26 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { createToast } = useCustomToast();
   const { user } = useMoralis();
-  const [bid, setBid] = useState({ min: null, value: null });
+  const [bid, setBid] = useState({ min: 0, value: 0 });
   const [status, setStatus] = useState<ReqStatus>("idle");
   const { fetch, isFetching } = useWeb3Transfer();
   const [uuid, setUuid] = useState<string | null>(null);
 
+  /**
+   * Handles the input for the min and current bid value
+   * @param e Input Event
+   */
   const handleBidInput = (e) => {
     const [key, value] = [e.target.name, e.target.value];
     setBid((nextBid) => ({ ...nextBid, [key]: value }));
   };
 
+  /**
+   * Transfers ASHF to a recepient with user signature.
+   * @param value number - Token Amount to transfer
+   * @param to string - Recepient Address
+   * @returns Promise<void>
+   */
   const transferASHF = async (value: number, to: string) => {
     return await fetch({
       params: {
@@ -53,6 +66,51 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
     });
   };
 
+  /**
+   * Programmatically transfers ASHF to the recepient address. No manual signature required
+   * @param value number - Token Amount to refund
+   * @param to string - Recepient Address
+   */
+  const refundASHF = async (value: number, to: string) => {
+    const privateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE_KEY;
+    const publicChain = process.env.NEXT_PUBLIC_NETWORK_CHAIN;
+
+    const contractABI = ashf.abi;
+    const web3js = new web3(
+      new web3.providers.HttpProvider(networks[publicChain].rpcUrls[0])
+    );
+    const contract = new web3js.eth.Contract(
+      contractABI as any,
+      erc20token.address
+    );
+    const data = contract.methods
+      .transfer(to, BigInt(value * 10 ** 18))
+      .encodeABI();
+    const rawTransaction = { to: erc20token.address, gas: 200000, data: data };
+
+    web3js.eth.accounts
+      .signTransaction(rawTransaction, privateKey)
+      .then((signedTx) =>
+        web3js.eth.sendSignedTransaction(signedTx.rawTransaction)
+      )
+      .then(() => {
+        setStatus("success");
+        createToast(`${value} ASHF refunded`, "success");
+      })
+      .catch((err) => {
+        setStatus("success");
+        createToast(
+          `Error while refunding ASHF`,
+          "error",
+          "Contact support for resolving this issue " + err.message
+        );
+      });
+  };
+
+  /**
+   * Testing Function
+   * @returns Promise<void>
+   */
   const testBidTransfer = async () => {
     setStatus("loading");
     return await transferASHF(
@@ -61,6 +119,9 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
     );
   };
 
+  /**
+   * Creates a new match in the DB and sets the UUID for the match room
+   */
   const findMatchOpponent = async () => {
     const username = user.attributes.ethAddress;
     const uri = process.env.NEXT_PUBLIC_SERVER + "/match";
@@ -78,6 +139,10 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  /**
+   * Safely cancels the Matchmaking SSE
+   * @param uuid string - UUID of the match room
+   */
   const cancelMatchmaking = async (uuid: string) => {
     console.log("Matchmaking request cancelled!");
     const response = await axios.get(
@@ -91,7 +156,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (uuid) {
-      console.log("Found UUID", uuid);
+      //Creating a new event source to the server to fetch 
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
       );
