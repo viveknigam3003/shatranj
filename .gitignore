@@ -32,3 +32,6 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+#web3
+/abis
