@@ -20,6 +20,7 @@ export interface CustomModalProps {
   isOpen?: boolean;
   isClosable?: boolean;
   actionButtonProps?: ButtonProps;
+  cancelButtonProps?: ButtonProps;
 }
 
 const CustomModal: React.FC<CustomModalProps> = ({
@@ -30,6 +31,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
   withAction,
   children,
   actionButtonProps,
+  cancelButtonProps,
   onClick,
   onClose,
 }) => {
@@ -57,6 +59,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
               variant="ghost"
               onClick={onClose}
               colorScheme="red"
+              {...cancelButtonProps}
             >
               Cancel
             </Button>
