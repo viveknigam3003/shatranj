@@ -1,24 +1,16 @@
 import { Button } from "@chakra-ui/button";
 import { Image } from "@chakra-ui/image";
 import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
-import {
-  CircularProgress,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  useDisclosure,
-} from "@chakra-ui/react";
+import { CircularProgress, useDisclosure } from "@chakra-ui/react";
 import axios from "axios";
 import Moralis from "moralis";
 import { NextPage } from "next";
 import { useRouter } from "next/dist/client/router";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { FaChessKing } from "react-icons/fa";
+import { FaChessKing, FaDollarSign } from "react-icons/fa";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
+import CustomModal from "../components/CustomModal";
 import { MetamaskIcon } from "../components/MetamaskIcon";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
@@ -31,8 +23,15 @@ const Home: NextPage = () => {
   const router = useRouter();
   const [status, setStatus] = useState<ReqStatus>("idle");
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [uuid, setUuid] = useState("");
-  const { authenticate, isAuthenticated, user, isWeb3Enabled, enableWeb3 } = useMoralis();
+  const [uuid, setUuid] = useState<string | null>(null);
+  const {
+    authenticate,
+    isAuthenticated,
+    user,
+    isWeb3Enabled,
+    enableWeb3,
+    logout,
+  } = useMoralis();
   const { fetch, error, isFetching } = useWeb3Transfer();
   const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -51,15 +50,31 @@ const Home: NextPage = () => {
   const changeNetwork = async (networkName: string) => {
     if (!isEthereumPresent()) return;
     try {
-      return await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [networks[networkName]],
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [
+          { chainId: networks[process.env.NEXT_PUBLIC_NETWORK_CHAIN].chainId },
+        ],
       });
-    } catch (err) {
+    } catch (switchErr) {
+      if (switchErr.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [networks[networkName]],
+          });
+        } catch (addErr) {
+          createToast(
+            "Could not add the requested chain",
+            "error",
+            addErr.message
+          );
+        }
+      }
       createToast(
-        "Could not connect to ethereum network",
+        "Could not connect to switch network",
         "error",
-        err.message
+        switchErr.message
       );
       return false;
     }
@@ -73,7 +88,9 @@ const Home: NextPage = () => {
     await changeNetwork(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
 
     return await authenticate({
-      onSuccess: () => {
+      onSuccess: async (user) => {
+        await addASHFToken(user);
+
         setStatus("success");
         createToast(
           "Successfully Connected",
@@ -93,9 +110,10 @@ const Home: NextPage = () => {
   };
 
   const findMatchOpponent = async () => {
-    enableWeb3({onSuccess: () => onOpen()});
-    if(!isWeb3Enabled) return;
+    enableWeb3();
+    if (!isWeb3Enabled) return;
     if (!user) return;
+    onOpen();
 
     const username = user.attributes.ethAddress;
     const uri = process.env.NEXT_PUBLIC_SERVER + "/match";
@@ -124,6 +142,34 @@ const Home: NextPage = () => {
     }
   };
 
+  const addASHFToken = async (
+    user: Moralis.User<Moralis.Attributes>
+  ): Promise<any> => {
+    if (user.attributes.ashf_connected) return;
+    const token = { address: contractAddress, symbol: "ASHF", decimals: 18 };
+    try {
+      return window.ethereum
+        .request({
+          method: "wallet_watchAsset",
+          params: {
+            type: "ERC20",
+            options: token,
+          },
+        })
+        .then(async () => {
+          //This will always run if the prompt was successful
+          //If someone forgets to add their ASHF, we can reset the status from the db
+          user.set("ashf_connected", true);
+          await user.save();
+          createToast("ASHF Token Imported", "success");
+        })
+        .catch((err) => console.log(err.message));
+    } catch (error) {
+      createToast("Could not load ASHF", "error", error.message);
+      return false;
+    }
+  };
+
   //Transaction Functions
   const transferASHF = async (value: number, to: string) => {
     return await fetch({
@@ -144,6 +190,7 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     if (uuid) {
+      console.log("Found UUID", uuid);
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
       );
@@ -171,22 +218,42 @@ const Home: NextPage = () => {
         sse.close();
       };
     }
-  }, [uuid, onClose, router, createToast]);
+  }, [uuid, onClose, onOpen, router, createToast]);
 
   const FindMatchButton: React.FC = () => (
-    <Button
-      colorScheme="green"
-      width="fit-content"
-      leftIcon={<FaChessKing />}
-      size="lg"
-      onClick={async () =>
-        await transferASHF(200, "")
-      }
-      isLoading={isFetching}
-      loadingText="Finding opponent"
-    >
-      Find a match
-    </Button>
+    <HStack>
+      <Button
+        colorScheme="green"
+        width="fit-content"
+        leftIcon={<FaChessKing />}
+        size="lg"
+        onClick={findMatchOpponent}
+        isLoading={isFetching}
+        loadingText="Finding opponent"
+      >
+        Find a match
+      </Button>
+      <Button
+        colorScheme="green"
+        width="fit-content"
+        leftIcon={<FaDollarSign />}
+        size="lg"
+        onClick={findMatchOpponent}
+      >
+        Add $ASHF
+      </Button>
+      <Button
+        colorScheme="blue"
+        variant={"ghost"}
+        width="fit-content"
+        size="lg"
+        onClick={() => logout()}
+        isLoading={isFetching}
+        loadingText="Finding opponent"
+      >
+        Logout
+      </Button>
+    </HStack>
   );
 
   const ConnectMetamaskButton: React.FC = () => (
@@ -266,35 +333,18 @@ const Home: NextPage = () => {
           </HStack>
         </Flex>
       </Flex>
-      <Modal
-        closeOnOverlayClick={false}
-        onClose={() => handleGracefulClose(uuid)}
+      <CustomModal
+        title="Finding Opponent"
         isOpen={isOpen}
-        isCentered
+        onClose={() => handleGracefulClose(uuid)}
       >
-        <ModalOverlay />
-        <ModalContent alignItems="center" shadow="lg" bg="#171717">
-          <ModalHeader color="whiteAlpha.800">Finding Opponent</ModalHeader>
-          <ModalBody>
-            <CircularProgress
-              size="80px"
-              isIndeterminate
-              trackColor="blackAlpha.400"
-              color="green.500"
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleGracefulClose(uuid)}
-              colorScheme="red"
-            >
-              Cancel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        <CircularProgress
+          size="80px"
+          isIndeterminate
+          trackColor="blackAlpha.400"
+          color="green.500"
+        />
+      </CustomModal>
     </>
   );
 };
