@@ -3,7 +3,7 @@ import {
   InputGroup,
   InputLeftAddon,
   Text,
-  VStack
+  VStack,
 } from "@chakra-ui/react";
 import axios from "axios";
 import Moralis from "moralis";
@@ -133,11 +133,11 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       return false;
     }
 
-    if (bid.value < appConfig.min_bid) {
+    if (bid.value < appConfig.minBid) {
       createToast(
         "Bid too small",
         "warning",
-        `Minimum bid should be ASHF ${appConfig.min_bid}`
+        `Minimum bid should be ASHF ${appConfig.minBid}`
       );
       return false;
     }
@@ -183,14 +183,14 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
 
       if (response.status === 200) {
         await _safeTransferToken(
-          bid.value * (1 - appConfig.platform_fee),
+          bid.value * (1 - appConfig.platformFee),
           user.attributes.ethAddress,
           {
             onSuccess: () => {
               createToast(
                 "Matchmaking request cancelled!",
                 "success",
-                `${bid.value * (1 - appConfig.platform_fee)} ASHF refunded`
+                `${bid.value * (1 - appConfig.platformFee)} ASHF refunded`
               );
               setCancelStatus("success");
               onClose();
@@ -294,7 +294,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
         </Text>
         <VStack alignItems="flex-start" width="100%" pb="2">
           <Text color="whiteAlpha.800" fontSize="0.8rem">
-            Your Bid (minimum {appConfig.min_bid} ASHF, in multiples of 10)
+            Your Bid (minimum {appConfig.minBid} ASHF, in multiples of 10)
           </Text>
           <InputGroup>
             <InputLeftAddon
@@ -343,9 +343,9 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
           </InputGroup>
         </VStack>
         <Text color="whiteAlpha.500" fontSize="0.8rem">
-          Finding a match will cost you {appConfig.platform_fee * 100}% of your
-          ${erc20token.symbol} bid as platform fee. If match not found{" "}
-          {(1 - appConfig.platform_fee) * 100}% of your ${erc20token.symbol} bid
+          Finding a match will cost you {appConfig.platformFee * 100}% of your $
+          {erc20token.symbol} bid as platform fee. If match not found{" "}
+          {(1 - appConfig.platformFee) * 100}% of your ${erc20token.symbol} bid
           is refunded.
         </Text>
       </VStack>

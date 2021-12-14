@@ -1,5 +1,6 @@
 export const appConfig = {
-  platform_fee: 0.1,
-  min_bid: 50,
+  platformFee: 0.1,
+  minBid: 50,
   multiplier: 10,
+  initialOffering: 1000,
 };

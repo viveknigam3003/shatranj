@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { FaChessKing } from "react-icons/fa";
 import { useMoralis } from "react-moralis";
+import { appConfig } from "../app-config";
 import Footer from "../components/Footer";
 import { _safeTransferToken } from "../components/Matchmaking";
 import { MetamaskIcon } from "../components/MetamaskIcon";
@@ -136,23 +137,30 @@ const Home: NextPage = () => {
         );
 
         if (user.attributes.ashf_connected) return;
-        
+
         const ashfAdded = await addASHFToken(user);
         if (ashfAdded) {
-          await _safeTransferToken(1000, user.attributes.ethAddress, {
-            onSuccess: () => {
-              setStatus("success");
-              createToast(`1000 ASHF added`, "success");
-            },
-            onError: (err) => {
-              setStatus("success");
-              createToast(
-                `Error while adding ASHF`,
-                "error",
-                `Contact support for getting ASHF to play. Error: ${err.message}`
-              );
-            },
-          });
+          await _safeTransferToken(
+            appConfig.initialOffering,
+            user.attributes.ethAddress,
+            {
+              onSuccess: () => {
+                setStatus("success");
+                createToast(
+                  `${appConfig.initialOffering} ASHF added`,
+                  "success"
+                );
+              },
+              onError: (err) => {
+                setStatus("success");
+                createToast(
+                  `Error while adding ASHF`,
+                  "error",
+                  `Contact support for getting ASHF to play. Error: ${err.message}`
+                );
+              },
+            }
+          );
         }
       },
       onError: () => {
