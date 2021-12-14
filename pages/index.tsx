@@ -1,29 +1,26 @@
 import { Button } from "@chakra-ui/button";
 import { Image } from "@chakra-ui/image";
 import { Box, Center, Flex, Heading, HStack, Text } from "@chakra-ui/layout";
-import { CircularProgress, useDisclosure } from "@chakra-ui/react";
-import axios from "axios";
+import { useDisclosure } from "@chakra-ui/react";
 import Moralis from "moralis";
 import { NextPage } from "next";
-import { useRouter } from "next/dist/client/router";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { FaChessKing, FaDollarSign } from "react-icons/fa";
-import { useMoralis, useWeb3Transfer } from "react-moralis";
-import CustomModal from "../components/CustomModal";
+import { useState } from "react";
+import { FaChessKing } from "react-icons/fa";
+import { useMoralis } from "react-moralis";
+import Footer from "../components/Footer";
+import Matchmaking from "../components/Matchmaking";
 import { MetamaskIcon } from "../components/MetamaskIcon";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
 import styles from "../styles/Home.module.css";
+import { erc20token } from "../token-config";
 
-type ReqStatus = "idle" | "loading" | "success" | "error";
+export type ReqStatus = "idle" | "loading" | "success" | "error";
 
 const Home: NextPage = () => {
   const { createToast } = useCustomToast();
-  const router = useRouter();
   const [status, setStatus] = useState<ReqStatus>("idle");
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [uuid, setUuid] = useState<string | null>(null);
   const {
     authenticate,
     isAuthenticated,
@@ -32,9 +29,12 @@ const Home: NextPage = () => {
     enableWeb3,
     logout,
   } = useMoralis();
-  const { fetch, error, isFetching } = useWeb3Transfer();
-  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+  const publicChain = process.env.NEXT_PUBLIC_NETWORK_CHAIN;
 
+  /**
+   * Checks if Browser is Web3 compatible
+   * @returns True if web3 is present
+   */
   const isEthereumPresent = (): Boolean => {
     if (!window.ethereum) {
       createToast(
@@ -47,14 +47,16 @@ const Home: NextPage = () => {
     return true;
   };
 
+  /**
+   * Requests to add new network if not present in wallet. Else switches to the network.
+   * @param networkName Public Chain Network Name (From network-config file) 
+   */
   const changeNetwork = async (networkName: string) => {
     if (!isEthereumPresent()) return;
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [
-          { chainId: networks[process.env.NEXT_PUBLIC_NETWORK_CHAIN].chainId },
-        ],
+        params: [{ chainId: networks[publicChain].chainId }],
       });
     } catch (switchErr) {
       if (switchErr.code === 4902) {
@@ -76,77 +78,19 @@ const Home: NextPage = () => {
         "error",
         switchErr.message
       );
-      return false;
     }
   };
 
-  const connectToMetamask = async () => {
-    if (!isEthereumPresent()) return;
-
-    setStatus("loading");
-    console.log(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
-    await changeNetwork(process.env.NEXT_PUBLIC_NETWORK_CHAIN);
-
-    return await authenticate({
-      onSuccess: async (user) => {
-        await addASHFToken(user);
-
-        setStatus("success");
-        createToast(
-          "Successfully Connected",
-          "success",
-          "Click on Find a match button to find opponent"
-        );
-      },
-      onError: () => {
-        setStatus("error");
-        createToast(
-          "Could not connect wallet",
-          "error",
-          "An unexpected error occured while connecting your account"
-        );
-      },
-    });
-  };
-
-  const findMatchOpponent = async () => {
-    enableWeb3();
-    if (!isWeb3Enabled) return;
-    if (!user) return;
-    onOpen();
-
-    const username = user.attributes.ethAddress;
-    const uri = process.env.NEXT_PUBLIC_SERVER + "/match";
-    const data = {
-      username,
-      token_bid: 1000,
-      min_bid: 1000,
-    };
-
-    try {
-      const response = await axios.post(uri, data);
-      setUuid(response.data.UUID);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const handleGracefulClose = async (uuid: string) => {
-    console.log("Matchmaking request cancelled!");
-    const response = await axios.get(
-      process.env.NEXT_PUBLIC_SERVER + `/match/cancel?uuid=${uuid}`
-    );
-    if (response.status === 200) {
-      setStatus("idle");
-      onClose();
-    }
-  };
-
+  /**
+   * Adds the ASHF (Asharfi) token to the current user's wallet
+   * @param user Moralis User Instance
+   * @returns 
+   */
   const addASHFToken = async (
     user: Moralis.User<Moralis.Attributes>
   ): Promise<any> => {
     if (user.attributes.ashf_connected) return;
-    const token = { address: contractAddress, symbol: "ASHF", decimals: 18 };
+    const token = { ...erc20token };
     try {
       return window.ethereum
         .request({
@@ -170,55 +114,47 @@ const Home: NextPage = () => {
     }
   };
 
-  //Transaction Functions
-  const transferASHF = async (value: number, to: string) => {
-    return await fetch({
-      params: {
-        amount: Moralis.Units.Token(value, 18),
-        receiver: to,
-        type: "erc20",
-        contractAddress: contractAddress,
+  /**
+   * Performs necessary operations to connect user to Metamask
+   */
+  const connectToMetamask = async () => {
+    if (!isEthereumPresent()) return;
+
+    setStatus("loading");
+    console.log(publicChain);
+    await changeNetwork(publicChain);
+
+    return await authenticate({
+      onSuccess: async (user) => {
+        await addASHFToken(user);
+
+        setStatus("success");
+        createToast(
+          "Successfully Connected",
+          "success",
+          "Click on Find a match button to find opponent"
+        );
       },
-      onSuccess: () => {
-        createToast(`${value} ASHF received successfully`, "success");
-      },
-      onError: (e) => {
-        createToast(`ASHF transaction failed`, "error", e.message);
+      onError: () => {
+        setStatus("error");
+        createToast(
+          "Could not connect wallet",
+          "error",
+          "An unexpected error occured while connecting your account"
+        );
       },
     });
   };
 
-  useEffect(() => {
-    if (uuid) {
-      console.log("Found UUID", uuid);
-      const sse = new EventSource(
-        process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
-      );
-      sse.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-        if (data.match_id) {
-          sse.close();
-          onClose();
-          createToast("Match Found", "success");
-          router.push(`/play/${data.match_id}`);
-        }
-      };
-
-      sse.onerror = () => {
-        createToast(
-          "Couldn't fetch opponent",
-          "error",
-          "An unexpected error occured while fetching opponent. Please check your internet connection."
-        );
-        sse.close();
-        onClose();
-      };
-
-      return () => {
-        sse.close();
-      };
-    }
-  }, [uuid, onClose, onOpen, router, createToast]);
+  /**
+   * Enables Web3 for the website and opens Matchmaking modal
+   */
+  const openBidModal = () => {
+    enableWeb3();
+    if (!isWeb3Enabled) return;
+    if (!user) return;
+    onOpen();
+  };
 
   const FindMatchButton: React.FC = () => (
     <HStack>
@@ -227,20 +163,9 @@ const Home: NextPage = () => {
         width="fit-content"
         leftIcon={<FaChessKing />}
         size="lg"
-        onClick={findMatchOpponent}
-        isLoading={isFetching}
-        loadingText="Finding opponent"
+        onClick={openBidModal}
       >
-        Find a match
-      </Button>
-      <Button
-        colorScheme="green"
-        width="fit-content"
-        leftIcon={<FaDollarSign />}
-        size="lg"
-        onClick={findMatchOpponent}
-      >
-        Add $ASHF
+        Start New Match
       </Button>
       <Button
         colorScheme="blue"
@@ -248,8 +173,6 @@ const Home: NextPage = () => {
         width="fit-content"
         size="lg"
         onClick={() => logout()}
-        isLoading={isFetching}
-        loadingText="Finding opponent"
       >
         Logout
       </Button>
@@ -315,36 +238,9 @@ const Home: NextPage = () => {
             <Image alt="Rook" src="/rook.png" />
           </Center>
         </Flex>
-        <Flex
-          width="100%"
-          flexDir="column"
-          justifyContent="center"
-          alignItems="center"
-          className={styles.footer}
-        >
-          <Text color="gray.500">Developed by Team Web23</Text>
-          <HStack color="gray.500" p="2">
-            <Link passHref href="/about">
-              <Text className={styles.link}>About</Text>
-            </Link>
-            <Link passHref href="/instruction">
-              <Text className={styles.link}>How to play</Text>
-            </Link>
-          </HStack>
-        </Flex>
+        <Footer />
       </Flex>
-      <CustomModal
-        title="Finding Opponent"
-        isOpen={isOpen}
-        onClose={() => handleGracefulClose(uuid)}
-      >
-        <CircularProgress
-          size="80px"
-          isIndeterminate
-          trackColor="blackAlpha.400"
-          color="green.500"
-        />
-      </CustomModal>
+      <Matchmaking isOpen={isOpen} onClose={onClose} />
     </>
   );
 };

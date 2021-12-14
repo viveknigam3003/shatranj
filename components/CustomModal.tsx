@@ -6,12 +6,12 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalOverlay,
+  ModalOverlay
 } from "@chakra-ui/modal";
-import { ButtonProps } from "@chakra-ui/react";
+import { ButtonProps, HStack } from "@chakra-ui/react";
 import React from "react";
 
-interface Props {
+export interface CustomModalProps {
   title: string;
   buttonText?: string;
   withAction?: boolean;
@@ -22,7 +22,7 @@ interface Props {
   actionButtonProps?: ButtonProps;
 }
 
-const CustomModal: React.FC<Props> = ({
+const CustomModal: React.FC<CustomModalProps> = ({
   title,
   buttonText,
   isOpen,
@@ -46,14 +46,21 @@ const CustomModal: React.FC<Props> = ({
         {isClosable && <ModalCloseButton />}
         <ModalBody>{children}</ModalBody>
         <ModalFooter>
-          {withAction && (
-            <Button size="sm" onClick={onClick} {...actionButtonProps}>
-              {buttonText}
+          <HStack>
+            {withAction && (
+              <Button size="sm" onClick={onClick} {...actionButtonProps}>
+                {buttonText}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+              colorScheme="red"
+            >
+              Cancel
             </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={onClose} colorScheme="red">
-            Cancel
-          </Button>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>
