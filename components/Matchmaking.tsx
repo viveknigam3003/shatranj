@@ -23,6 +23,45 @@ interface BidModalProps {
   onClose: () => void;
 }
 
+/**
+ * Programmatically transfers tokens to the recepient address. No manual signature required
+ * @param value number - Token Amount to refund
+ * @param to string - Recepient Address
+ */
+export const _safeTransferToken = async (
+  value: number,
+  to: string,
+  options?: { onSuccess?: (res?: any) => void; onError?: (err?: Error) => void }
+) => {
+  const privateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE_KEY;
+  const publicChain = process.env.NEXT_PUBLIC_NETWORK_CHAIN;
+
+  const contractABI = ashf.abi;
+  const web3js = new web3(
+    new web3.providers.HttpProvider(networks[publicChain].rpcUrls[0])
+  );
+  const contract = new web3js.eth.Contract(
+    contractABI as any,
+    erc20token.address
+  );
+  const data = contract.methods
+    .transfer(to, BigInt(value * 10 ** erc20token.decimals))
+    .encodeABI();
+  const rawTransaction = { to: erc20token.address, gas: 200000, data: data };
+
+  web3js.eth.accounts
+    .signTransaction(rawTransaction, privateKey)
+    .then((signedTx) =>
+      web3js.eth.sendSignedTransaction(signedTx.rawTransaction)
+    )
+    .then((res) => {
+      options.onSuccess(res);
+    })
+    .catch((err) => {
+      options.onError(err);
+    });
+};
+
 const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { createToast } = useCustomToast();
@@ -64,47 +103,6 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
         createToast(`ASHF transaction failed`, "error", e.message);
       },
     });
-  };
-
-  /**
-   * Programmatically transfers ASHF to the recepient address. No manual signature required
-   * @param value number - Token Amount to refund
-   * @param to string - Recepient Address
-   */
-  const refundASHF = async (value: number, to: string) => {
-    const privateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE_KEY;
-    const publicChain = process.env.NEXT_PUBLIC_NETWORK_CHAIN;
-
-    const contractABI = ashf.abi;
-    const web3js = new web3(
-      new web3.providers.HttpProvider(networks[publicChain].rpcUrls[0])
-    );
-    const contract = new web3js.eth.Contract(
-      contractABI as any,
-      erc20token.address
-    );
-    const data = contract.methods
-      .transfer(to, BigInt(value * 10 ** 18))
-      .encodeABI();
-    const rawTransaction = { to: erc20token.address, gas: 200000, data: data };
-
-    web3js.eth.accounts
-      .signTransaction(rawTransaction, privateKey)
-      .then((signedTx) =>
-        web3js.eth.sendSignedTransaction(signedTx.rawTransaction)
-      )
-      .then(() => {
-        setStatus("success");
-        createToast(`${value} ASHF refunded`, "success");
-      })
-      .catch((err) => {
-        setStatus("success");
-        createToast(
-          `Error while refunding ASHF`,
-          "error",
-          "Contact support for resolving this issue " + err.message
-        );
-      });
   };
 
   /**
@@ -156,16 +154,22 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (uuid) {
-      //Creating a new event source to the server to fetch 
+      //Creating a new event source to the server to fetch
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
       );
+
+      //When a message is received from the server
       sse.onmessage = (e) => {
+        //Parse the data
         const data = JSON.parse(e.data);
+        //If the data has a match_id
         if (data.match_id) {
+          //Close the SSE and the modal
           sse.close();
           onClose();
           createToast("Match Found", "success");
+          //Route to the play/[match_id] page
           router.push(`/play/${data.match_id}`);
         }
       };
