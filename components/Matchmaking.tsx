@@ -3,7 +3,7 @@ import {
   InputGroup,
   InputLeftAddon,
   Text,
-  VStack,
+  VStack
 } from "@chakra-ui/react";
 import axios from "axios";
 import Moralis from "moralis";
@@ -12,6 +12,7 @@ import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
 import web3 from "web3";
 import ashf from "../abis/Asharfi.json";
+import { appConfig } from "../app-config";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
 import { ReqStatus } from "../pages";
@@ -62,12 +63,15 @@ export const _safeTransferToken = async (
     });
 };
 
+type BidValue = { min: number; value: number };
+
 const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
   const { createToast } = useCustomToast();
   const { user } = useMoralis();
-  const [bid, setBid] = useState({ min: 0, value: 0 });
-  const [status, setStatus] = useState<ReqStatus>("idle");
+  const [bid, setBid] = useState<BidValue>({ min: 0, value: 0 });
+  const [cancelStatus, setCancelStatus] = useState<ReqStatus>("idle");
+  const [matchmakingStatus, setMatchMakingStatus] = useState<ReqStatus>("idle");
   const { fetch, isFetching } = useWeb3Transfer();
   const [uuid, setUuid] = useState<string | null>(null);
 
@@ -86,35 +90,59 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
    * @param to string - Recepient Address
    * @returns Promise<void>
    */
-  const transferASHF = async (value: number, to: string) => {
+  const transferASHF = async (
+    value: number,
+    to: string,
+    options?: { onSuccess?: () => void; onError?: (err?: Error) => void }
+  ) => {
     return await fetch({
       params: {
-        amount: Moralis.Units.Token(value, 18),
+        amount: Moralis.Units.Token(value, erc20token.decimals),
         receiver: to,
         type: "erc20",
         contractAddress: erc20token.address,
       },
       onSuccess: () => {
-        setStatus("success");
-        createToast(`${value} ASHF received successfully`, "success");
+        options.onSuccess();
       },
       onError: (e) => {
-        setStatus("error");
-        createToast(`ASHF transaction failed`, "error", e.message);
+        options.onError(e);
       },
     });
   };
 
-  /**
-   * Testing Function
-   * @returns Promise<void>
-   */
-  const testBidTransfer = async () => {
-    setStatus("loading");
-    return await transferASHF(
-      bid.value,
-      "0x23F247CE7d3D475316C7F5717c7bCf8fAB57F728"
-    );
+  const validateInput = (bid: BidValue) => {
+    if (bid.value < bid.min) {
+      createToast(
+        "Minimum opponent bid cannot be more than your bid",
+        "warning"
+      );
+      return false;
+    }
+
+    if (bid.value % 10 !== 0) {
+      createToast("Bid should be in multiples of 10", "warning");
+      return false;
+    }
+
+    if (bid.min % 10 !== 0) {
+      createToast(
+        "Minimum Opponent Bid should be in multiples of 10",
+        "warning"
+      );
+      return false;
+    }
+
+    if (bid.value < appConfig.min_bid) {
+      createToast(
+        "Bid too small",
+        "warning",
+        `Minimum bid should be ASHF ${appConfig.min_bid}`
+      );
+      return false;
+    }
+
+    return true;
   };
 
   /**
@@ -134,6 +162,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       setUuid(response.data.UUID);
     } catch (e) {
       console.log(e);
+      setMatchMakingStatus("error");
     }
   };
 
@@ -141,19 +170,68 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
    * Safely cancels the Matchmaking SSE
    * @param uuid string - UUID of the match room
    */
-  const cancelMatchmaking = async (uuid: string) => {
-    console.log("Matchmaking request cancelled!");
-    const response = await axios.get(
-      process.env.NEXT_PUBLIC_SERVER + `/match/cancel?uuid=${uuid}`
-    );
-    if (response.status === 200) {
-      setStatus("idle");
-      onClose();
+  const cancelMatchmaking = async (
+    uuid: string,
+    user: Moralis.User<Moralis.Attributes>
+  ) => {
+    setCancelStatus("loading");
+    setMatchMakingStatus("idle");
+    try {
+      const response = await axios.get(
+        process.env.NEXT_PUBLIC_SERVER + `/match/cancel?uuid=${uuid}`
+      );
+
+      if (response.status === 200) {
+        await _safeTransferToken(
+          bid.value * (1 - appConfig.platform_fee),
+          user.attributes.ethAddress,
+          {
+            onSuccess: () => {
+              createToast(
+                "Matchmaking request cancelled!",
+                "success",
+                `${bid.value * (1 - appConfig.platform_fee)} ASHF refunded`
+              );
+              setCancelStatus("success");
+              onClose();
+            },
+            onError: (e) => {
+              createToast(
+                "Could not return ASHF. Please contact support for resolving this error",
+                "success",
+                e.message
+              );
+              setCancelStatus("error");
+              onClose();
+            },
+          }
+        );
+        return;
+      }
+    } catch {
+      setCancelStatus("error");
     }
+  };
+
+  const handleMatchmaking = async () => {
+    if (!validateInput(bid)) return;
+
+    setMatchMakingStatus("loading");
+    await transferASHF(bid.value, process.env.NEXT_PUBLIC_OWNER_ADDRESS, {
+      onSuccess: async () => {
+        createToast(`${bid.value} ASHF received successfully`, "success");
+        await findMatchOpponent();
+      },
+      onError: (e) => {
+        setMatchMakingStatus("error");
+        createToast(`ASHF transaction failed`, "error", e.message);
+      },
+    });
   };
 
   useEffect(() => {
     if (uuid) {
+      console.log("Found UUID", uuid);
       //Creating a new event source to the server to fetch
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
@@ -166,6 +244,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
         //If the data has a match_id
         if (data.match_id) {
           //Close the SSE and the modal
+          setMatchMakingStatus("success");
           sse.close();
           onClose();
           createToast("Match Found", "success");
@@ -194,64 +273,79 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
     <CustomModal
       title="Find an opponent"
       isOpen={isOpen}
-      onClose={onClose}
-      onClick={testBidTransfer}
+      onClick={handleMatchmaking}
       withAction
       buttonText="Start finding match"
       actionButtonProps={{
         colorScheme: "green",
-        isLoading: status === "loading",
+        isLoading: matchmakingStatus === "loading",
         loadingText: isFetching ? "Waiting for ASHF" : "Finding Match",
         isDisabled: !bid.value,
+      }}
+      cancelButtonProps={{
+        onClick: !uuid ? () => onClose() : () => cancelMatchmaking(uuid, user),
+        isLoading: cancelStatus === "loading",
+        loadingText: "Cancelling Request",
       }}
     >
       <VStack>
         <Text color="whiteAlpha.800" mb="2">
           Enter your wager to find suitable opponents
         </Text>
-        <InputGroup>
-          <InputLeftAddon
-            bg="whiteAlpha.100"
-            border="none"
-            color="whiteAlpha.500"
-          >
-            ${erc20token.symbol}
-          </InputLeftAddon>
-          <Input
-            variant="filled"
-            bg="blackAlpha.500"
-            _hover={{ bg: "blackAlpha.300" }}
-            color="whiteAlpha.800"
-            placeholder="Your Bid"
-            value={bid.value}
-            name="value"
-            type="number"
-            onChange={handleBidInput}
-          />
-        </InputGroup>
-        <InputGroup>
-          <InputLeftAddon
-            bg="whiteAlpha.100"
-            border="none"
-            color="whiteAlpha.500"
-          >
-            ${erc20token.symbol}
-          </InputLeftAddon>
-          <Input
-            type="number"
-            variant="filled"
-            bg="blackAlpha.500"
-            _hover={{ bg: "blackAlpha.300" }}
-            color="whiteAlpha.800"
-            placeholder="Min Bid (Optional)"
-            name="min"
-            value={bid.min}
-            onChange={handleBidInput}
-          />
-        </InputGroup>
-        <Text color="whiteAlpha.500" py="2" fontSize="0.8rem">
-          Finding a match will cost you 10% of your ${erc20token.symbol} bid as
-          platform fee. If match not found 90% of your ${erc20token.symbol} bid
+        <VStack alignItems="flex-start" width="100%" pb="2">
+          <Text color="whiteAlpha.800" fontSize="0.8rem">
+            Your Bid (minimum {appConfig.min_bid} ASHF, in multiples of 10)
+          </Text>
+          <InputGroup>
+            <InputLeftAddon
+              bg="whiteAlpha.100"
+              border="none"
+              color="whiteAlpha.500"
+            >
+              ${erc20token.symbol}
+            </InputLeftAddon>
+            <Input
+              variant="filled"
+              bg="blackAlpha.500"
+              _hover={{ bg: "blackAlpha.300" }}
+              color="whiteAlpha.800"
+              placeholder="Your Bid"
+              value={bid.value}
+              name="value"
+              type="number"
+              onChange={handleBidInput}
+            />
+          </InputGroup>
+        </VStack>
+        <VStack alignItems="flex-start" width="100%" pb="2">
+          <Text color="whiteAlpha.800" fontSize="0.8rem">
+            Minimum Opponent Bid (Optional)
+          </Text>
+          <InputGroup>
+            <InputLeftAddon
+              bg="whiteAlpha.100"
+              border="none"
+              color="whiteAlpha.500"
+            >
+              ${erc20token.symbol}
+            </InputLeftAddon>
+            <Input
+              type="number"
+              variant="filled"
+              bg="blackAlpha.500"
+              _hover={{ bg: "blackAlpha.300" }}
+              color="whiteAlpha.800"
+              placeholder="Min Bid (Optional)"
+              name="min"
+              value={bid.min}
+              onChange={handleBidInput}
+            />
+          </InputGroup>
+        </VStack>
+        <Text color="whiteAlpha.500" fontSize="0.8rem">
+          Finding a match will cost you {appConfig.platform_fee * 100}% of your
+          ${erc20token.symbol} bid as platform fee. If match not found{" "}
+          {(1 - appConfig.platform_fee) * 100}% of your ${erc20token.symbol} bid
           is refunded.
         </Text>
       </VStack>
