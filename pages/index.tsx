@@ -9,6 +9,7 @@ import { useState } from "react";
 import { FaChessKing } from "react-icons/fa";
 import { useMoralis } from "react-moralis";
 import Footer from "../components/Footer";
+import { _safeTransferToken } from "../components/Matchmaking";
 import { MetamaskIcon } from "../components/MetamaskIcon";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
@@ -90,7 +91,6 @@ const Home: NextPage = () => {
   const addASHFToken = async (
     user: Moralis.User<Moralis.Attributes>
   ): Promise<any> => {
-    if (user.attributes.ashf_connected) return;
     const token = { ...erc20token };
     try {
       return window.ethereum
@@ -107,6 +107,7 @@ const Home: NextPage = () => {
           user.set("ashf_connected", true);
           await user.save();
           createToast("ASHF Token Imported", "success");
+          return true;
         })
         .catch((err) => console.log(err.message));
     } catch (error) {
@@ -127,14 +128,32 @@ const Home: NextPage = () => {
 
     return await authenticate({
       onSuccess: async (user) => {
-        await addASHFToken(user);
-
         setStatus("success");
         createToast(
           "Successfully Connected",
           "success",
           "Click on Find a match button to find opponent"
         );
+
+        if (user.attributes.ashf_connected) return;
+        
+        const ashfAdded = await addASHFToken(user);
+        if (ashfAdded) {
+          await _safeTransferToken(1000, user.attributes.ethAddress, {
+            onSuccess: () => {
+              setStatus("success");
+              createToast(`1000 ASHF added`, "success");
+            },
+            onError: (err) => {
+              setStatus("success");
+              createToast(
+                `Error while adding ASHF`,
+                "error",
+                `Contact support for getting ASHF to play. Error: ${err.message}`
+              );
+            },
+          });
+        }
       },
       onError: () => {
         setStatus("error");

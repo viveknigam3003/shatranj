@@ -1,4 +1,4 @@
-interface ERC20TokenConfig {
+export interface ERC20TokenConfig {
   address: string;
   symbol: string;
   name?: string;
