@@ -44,7 +44,7 @@ export interface MatchData {
   match_id: string;
   white: Player;
   black: Player;
-  winner: string | null;
+  winner: string;
 }
 
 export interface PlayPageProps {
@@ -160,7 +160,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
 
     if (socket) {
       //When opponent makes a move
-      
+
       socket.on("move", (res) => {
         console.log("On: move");
         updateGameWithPGN(res);
@@ -196,24 +196,27 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
   //   };
   // }, [socket, currentPlayerSide, onClose, openGameOver, game]);
 
-  const postMatchWinner = useCallback(async (data: MatchData, reason?: string) => {
-    const winningSide = game.turn() === "w" ? "black" : "white";
-    try {
-      await axios.post(
-        process.env.NEXT_PUBLIC_SERVER + "/match/winner",
-        { hash: data[winningSide].hash, match_id: data.match_id }
-      );
+  const postMatchWinner = useCallback(
+    async (data: MatchData, reason?: string) => {
+      const winningSide = game.turn() === "w" ? "black" : "white";
+      try {
+        await axios.post(process.env.NEXT_PUBLIC_SERVER + "/match/winner", {
+          hash: data[winningSide].hash,
+          match_id: data.match_id,
+        });
 
-      setGameState((nextState) => ({
-        ...nextState,
-        reason: reason,
-        winner: winningSide,
-      }));
-      openGameOver();
-    } catch {
-      console.log("Could not set winner");
-    }
-  }, [game, openGameOver]);
+        setGameState((nextState) => ({
+          ...nextState,
+          reason: reason,
+          winner: winningSide,
+        }));
+        openGameOver();
+      } catch {
+        console.log("Could not set winner");
+      }
+    },
+    [game, openGameOver]
+  );
 
   useEffect(() => {
     if (game.in_checkmate()) {
@@ -304,6 +307,14 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       process.env.NEXT_PUBLIC_SERVER + `/match?match_id=${id}`
     );
     data = await response.json();
+    if (data.winner) {
+      return {
+        redirect: {
+          permanent: false,
+          destination: `/fin/${id}`,
+        },
+      };
+    }
   } catch {
     return {
       redirect: {
