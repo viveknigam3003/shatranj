@@ -11,13 +11,13 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
 import web3 from "web3";
-import * as ashf from "../abis/Asharfi.json";
 import { appConfig } from "../app-config";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
 import { ReqStatus } from "../pages";
 import { erc20token } from "../token-config";
 import CustomModal from "./CustomModal";
+const ashf = require("../abis/Asharfi.json");
 
 interface BidModalProps {
   isOpen: boolean;
