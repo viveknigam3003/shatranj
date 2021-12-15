@@ -270,6 +270,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
     }
   }, [uuid, onClose, router, createToast]);
 
+
   return (
     <CustomModal
       title="Find an opponent"
