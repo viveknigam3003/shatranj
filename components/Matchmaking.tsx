@@ -17,7 +17,7 @@ import { networks } from "../network-config";
 import { ReqStatus } from "../pages";
 import { erc20token } from "../token-config";
 import CustomModal from "./CustomModal";
-const ashf = require("../abis/Asharfi.json");
+import ashf from "../abis/Asharfi.json";
 
 interface BidModalProps {
   isOpen: boolean;
