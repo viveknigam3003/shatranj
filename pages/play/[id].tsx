@@ -227,6 +227,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
               router.push(`/fin/${data.match_id}`);
             },
             onError: (err) => {
+              //Contact support for details. Error: Cannot read properties of null (reading 'substring')
               createToast(
                 `Error while refunding ASHF`,
                 "error",
@@ -295,18 +296,19 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
 
           await _safeTransferToken(totalWinning, data.winner, {
             onSuccess: () => {
-              createToast(
-                `${totalWinning} ASHF sent to ${truncateHash(data.winner)}`,
-                "success"
-              );
+              // createToast(
+              //   `${totalWinning} ASHF sent to ${truncateHash(data.winner)}`,
+              //   "success"
+              // );
               router.push(`/fin/${data.match_id}`);
             },
             onError: (err) => {
-              createToast(
-                `Error while refunding ASHF`,
-                "error",
-                `Contact support for details. Error: ${err.message}`
-              );
+              console.log("Error ASHF")
+              // createToast(
+              //   `Error while refunding ASHF`,
+              //   "error",
+              //   `Contact support for details. Error: ${err.message}`
+              // );
             },
           });
         })
