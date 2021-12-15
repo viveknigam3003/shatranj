@@ -11,7 +11,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
 import web3 from "web3";
-import { contractJSON } from "../abis/asharfi";
+import { contractJSON } from "../asharfi";
 import { appConfig } from "../app-config";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
