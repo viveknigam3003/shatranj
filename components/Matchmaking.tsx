@@ -11,7 +11,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
 import web3 from "web3";
-import ashf from "../abis/Asharfi.json";
+import ashf from "../abis/Asharfi";
 import { appConfig } from "../app-config";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
@@ -74,7 +74,6 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
   const [matchmakingStatus, setMatchMakingStatus] = useState<ReqStatus>("idle");
   const { fetch, isFetching } = useWeb3Transfer();
   const [uuid, setUuid] = useState<string | null>(null);
-  const [sseInstance, setSSEInstance] = useState<EventSource | null>(null);
 
   /**
    * Handles the input for the min and current bid value
@@ -183,7 +182,6 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       );
 
       if (response.status === 200) {
-        sseInstance.close();
         await _safeTransferToken(
           bid.value * (1 - appConfig.platformFee),
           user.attributes.ethAddress,
@@ -238,9 +236,6 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
       );
-      if (!sseInstance) {
-        setSSEInstance(sse);
-      }
 
       //When a message is received from the server
       sse.onmessage = (e) => {
@@ -273,7 +268,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
         sse.close();
       };
     }
-  }, [uuid, onClose, router, createToast, sseInstance]);
+  }, [uuid, onClose, router, createToast]);
 
   return (
     <CustomModal
