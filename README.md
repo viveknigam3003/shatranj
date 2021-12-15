@@ -63,5 +63,46 @@ The Frontend of the application is deployed over Vercel and it harnesses the cap
 
 ## Team
 
+<table align="center">
+<tr align="center">
+<td>
+<strong>Vivek Nigam</strong>
+<p align="center">
+<img src = "https://avatars.githubusercontent.com/u/30192068?v=4"  height="120" alt="Vivek Nigam">
+</p>
+<p align="center">
+<a href = "https://github.com/viveknigam3003"><img src = "http://www.iconninja.com/files/241/825/211/round-collaboration-social-github-code-circle-network-icon.svg" width="36" height = "36"/></a>
+</p>
+</td>
+<td>
+<strong>Himanshu Garg</strong>
+<p align="center">
+<img src = "https://avatars.githubusercontent.com/u/35988194?v=4"  height="120" alt="Himanshu Garg">
+</p>
+<p align="center">
+<a href = "https://github.com/merrcury"><img src = "http://www.iconninja.com/files/241/825/211/round-collaboration-social-github-code-circle-network-icon.svg" width="36" height = "36"/></a>
+</p>
+</td>
+<td>
+<strong>Ankur</strong>
+<p align="center">
+<img src = "https://avatars.githubusercontent.com/u/34418414?v=4"  height="120" alt="Ankur">
+</p>
+<p align="center">
+<a href = "https://github.com/ankuraxz"><img src = "http://www.iconninja.com/files/241/825/211/round-collaboration-social-github-code-circle-network-icon.svg" width="36" height = "36"/></a>
+</p>
+</td>
+<td>
+<strong>Aaishika S Bhattacharya</strong>
+<p align="center">
+<img src = "https://avatars.githubusercontent.com/u/52964353?v=4"  height="120" alt="Aaishika">
+</p>
+<p align="center">
+<a href = "https://github.com/aaishikasb"><img src = "http://www.iconninja.com/files/241/825/211/round-collaboration-social-github-code-circle-network-icon.svg" width="36" height = "36"/></a>
+</p>
+</td>
+</tr>
+</table>
+
 ## Ending Notes
 This Website is offered and available to users who are 13 years of age or older. The Website is not intended for children under 13 years of age. By using this Website, you represent and warrant that you (i) are 13 years of age or older, (ii) are not barred to use the Website under any applicable law, and (iii) are using the Website only for your own personal use. If you do not meet these requirements, you must not access or use the Website.
