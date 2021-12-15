@@ -11,7 +11,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
 import web3 from "web3";
-import ashf from "../abis/Asharfi";
+import { contractJSON } from "../abis/Asharfi";
 import { appConfig } from "../app-config";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
@@ -37,7 +37,7 @@ export const _safeTransferToken = async (
   const privateKey = process.env.NEXT_PUBLIC_OWNER_PRIVATE_KEY;
   const publicChain = process.env.NEXT_PUBLIC_NETWORK_CHAIN;
 
-  const contractABI = ashf.abi;
+  const contractABI = contractJSON.abi;
   const web3js = new web3(
     new web3.providers.HttpProvider(networks[publicChain].rpcUrls[0])
   );
