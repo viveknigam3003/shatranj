@@ -3,7 +3,7 @@ import {
   InputGroup,
   InputLeftAddon,
   Text,
-  VStack,
+  VStack
 } from "@chakra-ui/react";
 import axios from "axios";
 import Moralis from "moralis";
@@ -11,7 +11,7 @@ import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { useMoralis, useWeb3Transfer } from "react-moralis";
 import web3 from "web3";
-import ashf from "../abis/Asharfi.json";
+import * as ashf from "../abis/Asharfi.json";
 import { appConfig } from "../app-config";
 import { useCustomToast } from "../hooks/useCustomToast";
 import { networks } from "../network-config";
@@ -74,7 +74,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
   const [matchmakingStatus, setMatchMakingStatus] = useState<ReqStatus>("idle");
   const { fetch, isFetching } = useWeb3Transfer();
   const [uuid, setUuid] = useState<string | null>(null);
-  const [sseInstance, setSSEInstance] = useState<EventSource|null>(null);
+  const [sseInstance, setSSEInstance] = useState<EventSource | null>(null);
 
   /**
    * Handles the input for the min and current bid value
@@ -183,7 +183,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       );
 
       if (response.status === 200) {
-        sseInstance.close()
+        sseInstance.close();
         await _safeTransferToken(
           bid.value * (1 - appConfig.platformFee),
           user.attributes.ethAddress,
@@ -238,7 +238,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
       );
-      if(!sseInstance) {
+      if (!sseInstance) {
         setSSEInstance(sse);
       }
 
@@ -246,7 +246,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       sse.onmessage = (e) => {
         //Parse the data
         const data = JSON.parse(e.data);
-        console.log(data)
+        console.log(data);
         //If the data has a match_id
         if (data.match_id) {
           //Close the SSE and the modal
