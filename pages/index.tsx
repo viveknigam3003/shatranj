@@ -68,19 +68,22 @@ const Home: NextPage = () => {
             method: "wallet_addEthereumChain",
             params: [networks[networkName]],
           });
+          return;
         } catch (addErr) {
           createToast(
             "Could not add the requested chain",
             "error",
             addErr.message
           );
+          return;
         }
+      } else {
+        createToast(
+          "Could not connect to switch network",
+          "error",
+          switchErr.message
+        );
       }
-      createToast(
-        "Could not connect to switch network",
-        "error",
-        switchErr.message
-      );
     }
   };
 
