@@ -74,6 +74,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
   const [matchmakingStatus, setMatchMakingStatus] = useState<ReqStatus>("idle");
   const { fetch, isFetching } = useWeb3Transfer();
   const [uuid, setUuid] = useState<string | null>(null);
+  const [sseInstance, setSSEInstance] = useState<EventSource|null>(null);
 
   /**
    * Handles the input for the min and current bid value
@@ -182,6 +183,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       );
 
       if (response.status === 200) {
+        sseInstance.close()
         await _safeTransferToken(
           bid.value * (1 - appConfig.platformFee),
           user.attributes.ethAddress,
@@ -236,11 +238,15 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
       const sse = new EventSource(
         process.env.NEXT_PUBLIC_SERVER + `/match/status?uuid=${uuid}`
       );
+      if(!sseInstance) {
+        setSSEInstance(sse);
+      }
 
       //When a message is received from the server
       sse.onmessage = (e) => {
         //Parse the data
         const data = JSON.parse(e.data);
+        console.log(data)
         //If the data has a match_id
         if (data.match_id) {
           //Close the SSE and the modal
@@ -267,7 +273,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
         sse.close();
       };
     }
-  }, [uuid, onClose, router, createToast]);
+  }, [uuid, onClose, router, createToast, sseInstance]);
 
   return (
     <CustomModal
