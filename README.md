@@ -49,7 +49,8 @@ we know that Chess games are widely popular today. Shatranj increases the incent
 
 ## Implementation and Deployment
 The Frontend of the application is deployed over Vercel and it harnesses the capabilities of the aforementioned Technology Stack.
-[System Architecture]
+
+![System Architecture](repository-assets/system-architecture.jpeg)
 
 ## Prize Tracks
  - Hackathon Overalls
