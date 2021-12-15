@@ -154,7 +154,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
     const data = {
       username,
       token_bid: bid.value,
-      min_bid: bid.min,
+      min_bid: !bid.min ? bid.value : bid.min,
     };
 
     try {
@@ -319,7 +319,7 @@ const Matchmaking: React.FC<BidModalProps> = ({ isOpen, onClose }) => {
         </VStack>
         <VStack alignItems="flex-start" width="100%" pb="2">
           <Text color="whiteAlpha.800" fontSize="0.8rem">
-            Minimum Opponent Bid (Optional)
+            Minimum Opponent Bid (Optional, Will use {bid.value} if left blank)
           </Text>
           <InputGroup>
             <InputLeftAddon
