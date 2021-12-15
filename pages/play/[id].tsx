@@ -9,10 +9,11 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
+import axios from "axios";
 import * as ChessJS from "chess.js";
 import { GetServerSidePropsContext, NextPage } from "next";
-import nookies from "nookies";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useMoralis } from "react-moralis";
 import io from "socket.io-client";
 import Header from "../../components/Header";
 import MainChessboard from "../../components/MainChessboard";
@@ -38,19 +39,22 @@ const updateGame = (
 
 const newGame = new Chess();
 
+export type Player = { amount: number; hash: string };
 export interface MatchData {
-  matchId: string;
-  white: string;
-  black: string;
+  match_id: string;
+  white: Player;
+  black: Player;
+  winner: string | null;
 }
 
-interface PlayPageProps {
+export interface PlayPageProps {
   data: MatchData;
 }
 
 const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
+  const { user } = useMoralis();
+  const [userEthAddress, setUserEthAddress] = useState<string>("");
   const [game, setGame] = useState(newGame);
-  const [currentUser, setCurrentUser] = useState<string>("");
   const [socket, setSocket] = useState(null);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -61,22 +65,26 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
   } = useDisclosure();
   const [gameState, setGameState] = useState({ winner: "", reason: "" });
 
-  const currentPlayerSide: Orientation =
-    data.white.toLowerCase() === currentUser.toLowerCase() ? "white" : "black";
-
-  const allowMoves = Object.values(data)
-    .map((item) => item.toLowerCase())
-    .includes(currentUser.toLowerCase());
-
   useEffect(() => {
-    if (typeof window !== undefined) {
-      setCurrentUser(localStorage.getItem("user"));
+    if (user) {
+      setUserEthAddress(user.attributes.ethAddress);
     }
-  }, [setCurrentUser]);
+  }, [user]);
+
+  const currentPlayerSide: Orientation =
+    data.white.hash.toLowerCase() === userEthAddress.toLowerCase()
+      ? "white"
+      : "black";
+
+  const allowMoves =
+    user &&
+    (data.white.hash.toLowerCase() === userEthAddress.toLowerCase() ||
+      data.black.hash.toLowerCase() === userEthAddress.toLowerCase());
 
   useEffect(() => {
     //1. When Socket Connects
     const socketURI = process.env.NEXT_PUBLIC_WEBSOCKET;
+    console.log("Socket = ", socketURI);
     if (!socketURI) {
       setSocket(null);
       return;
@@ -85,6 +93,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
     const newSocket = io(process.env.NEXT_PUBLIC_WEBSOCKET, {
       path: "/ws/socket.io",
     });
+
     setSocket(newSocket);
     return () => {
       newSocket.close();
@@ -93,10 +102,11 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
 
   useEffect(() => {
     //2. When the currentUser joins the room
-    if (socket && currentUser.length) {
-      socket.emit("room", data.matchId, currentUser);
+    if (socket && userEthAddress.length) {
+      console.log("Emit: room", data.match_id, userEthAddress);
+      socket.emit("room", data.match_id, userEthAddress);
     }
-  }, [socket, data, currentUser]);
+  }, [socket, data, userEthAddress]);
 
   //Memoizing the PGN wrt the game.
   const pgn = useMemo(() => game.pgn(), [game]);
@@ -104,19 +114,21 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
   useEffect(() => {
     //3. When the player makes a move
     if (socket) {
+      console.log("Emit: move", pgn);
       socket.emit("move", pgn);
     }
   }, [pgn, socket]);
 
   useEffect(() => {
     //4. When the currentUser joins the room
-    const createToast = (account) => {
+    const createToast = (account: string) => {
+      console.log(account);
       if (
         !toast.isActive("opponent-connected") &&
-        account.toLowerCase() !== currentUser.toLowerCase()
+        account.toLowerCase() !== userEthAddress.toLowerCase()
       ) {
-        onClose();
         socket.emit("ack", `${currentPlayerSide} joined`);
+        onClose();
         toast({
           id: "opponent-connected",
           title: "Opponent Joined",
@@ -129,6 +141,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
     };
 
     if (socket) {
+      console.log("On: room");
       socket.on("room", createToast);
     }
 
@@ -137,16 +150,21 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
         socket.off("room", createToast);
       }
     };
-  }, [socket, currentUser, onClose, currentPlayerSide, toast]);
+  }, [socket, userEthAddress, onClose, currentPlayerSide, toast]);
 
   useEffect(() => {
-    const updateGameWithPGN = (newPGN) => {
+    const updateGameWithPGN = (newPGN: string) => {
       console.log(newPGN);
       updateGame(game, setGame, newPGN);
     };
 
     if (socket) {
-      socket.on("move", updateGameWithPGN);
+      //When opponent makes a move
+      
+      socket.on("move", (res) => {
+        console.log("On: move");
+        updateGameWithPGN(res);
+      });
     }
 
     return () => {
@@ -156,44 +174,57 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
     };
   }, [socket, game]);
 
-  useEffect(() => {
-    const toastUserDisconnect = (account) => {
-      onClose();
-      openGameOver();
+  // useEffect(() => {
+  //   const toastUserDisconnect = (account) => {
+  //     onClose();
+  //     openGameOver();
+  //     setGameState((nextState) => ({
+  //       ...nextState,
+  //       reason: `Opponent (${truncateHash(account)}) left the game`,
+  //       winner: currentPlayerSide,
+  //     }));
+  //   };
+
+  //   if (socket) {
+  //     socket.on("disconnect", toastUserDisconnect);
+  //   }
+
+  //   return () => {
+  //     if (socket) {
+  //       socket.off("disconnect", toastUserDisconnect);
+  //     }
+  //   };
+  // }, [socket, currentPlayerSide, onClose, openGameOver, game]);
+
+  const postMatchWinner = useCallback(async (data: MatchData, reason?: string) => {
+    const winningSide = game.turn() === "w" ? "black" : "white";
+    try {
+      await axios.post(
+        process.env.NEXT_PUBLIC_SERVER + "/match/winner",
+        { hash: data[winningSide].hash, match_id: data.match_id }
+      );
+
       setGameState((nextState) => ({
         ...nextState,
-        reason: `Opponent (${truncateHash(account)}) left the game`,
-        winner: currentPlayerSide,
+        reason: reason,
+        winner: winningSide,
       }));
-    };
-
-    if (socket) {
-      socket.on("disconnect", toastUserDisconnect);
+      openGameOver();
+    } catch {
+      console.log("Could not set winner");
     }
-
-    return () => {
-      if (socket) {
-        socket.off("disconnect", toastUserDisconnect);
-      }
-    };
-  }, [socket, currentPlayerSide, onClose, openGameOver, game]);
+  }, [game, openGameOver]);
 
   useEffect(() => {
     if (game.in_checkmate()) {
-      openGameOver();
-      const currentWinner = game.turn() === "w" ? "black" : "white";
-      setGameState((nextState) => ({
-        ...nextState,
-        reason: "Win by checkmate",
-        winner: currentWinner,
-      }));
+      postMatchWinner(data, "Checkmate");
     }
-  }, [game, openGameOver]);
+  }, [game, data, postMatchWinner]);
 
   return (
     <>
       <Box height="100vh" className={styles.root}>
-        <Header account={currentUser} />
+        <Header account={userEthAddress} />
         <Flex alignItems="center" justifyContent="space-between" px="16rem">
           <Box flexBasis="65%">
             <MainChessboard
@@ -265,25 +296,22 @@ export default PlayPage;
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   //Try to get token from cookies.
-  const cookies = nookies.get(ctx);
-  const token = cookies.token;
+  const { id } = ctx.params;
 
-  //If the token does not exist or is cleared then redirect to home page.
-  if (!token) {
+  let data;
+  try {
+    const response = await fetch(
+      process.env.NEXT_PUBLIC_SERVER + `/match?match_id=${id}`
+    );
+    data = await response.json();
+  } catch {
     return {
       redirect: {
         permanent: false,
-        destination: "/",
+        destination: "/404",
       },
     };
   }
-
-  const { id } = ctx.params;
-
-  const response = await fetch(
-    process.env.NEXT_PUBLIC_SERVER + `/match?match_id=${id}`
-  );
-  const data = await response.json();
 
   if (!data) {
     return {

@@ -13,9 +13,9 @@ const OptionPanel: React.FC<OptionPanelProps> = ({
   currentPlayerSide,
 }) => {
   const playerOrder = [
-    <UserDetails key={matchData.white} account={matchData.white} />,
+    <UserDetails key={matchData.white.hash} account={matchData.white.hash} />,
     "v/s",
-    <UserDetails key={matchData.black} account={matchData.black} />,
+    <UserDetails key={matchData.black.hash} account={matchData.black.hash} />,
   ];
 
   return (
