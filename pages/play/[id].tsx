@@ -7,18 +7,22 @@ import {
   ModalHeader,
   ModalOverlay,
   useDisclosure,
-  useToast,
+  useToast
 } from "@chakra-ui/react";
 import axios from "axios";
 import * as ChessJS from "chess.js";
 import { GetServerSidePropsContext, NextPage } from "next";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
+import React, { useEffect, useMemo, useState } from "react";
 import { useMoralis } from "react-moralis";
 import io from "socket.io-client";
+import { appConfig } from "../../app-config";
 import Header from "../../components/Header";
 import MainChessboard from "../../components/MainChessboard";
+import { _safeTransferToken } from "../../components/Matchmaking";
 import MoveList from "../../components/MoveList";
 import OptionPanel from "../../components/OptionPanel";
+import { useCustomToast } from "../../hooks/useCustomToast";
 import styles from "../../styles/Play.module.css";
 import { truncateHash } from "../../utils";
 
@@ -52,7 +56,9 @@ export interface PlayPageProps {
 }
 
 const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
+  const router = useRouter();
   const { user } = useMoralis();
+  const { createToast } = useCustomToast();
   const [userEthAddress, setUserEthAddress] = useState<string>("");
   const [game, setGame] = useState(newGame);
   const [socket, setSocket] = useState(null);
@@ -174,55 +180,197 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
     };
   }, [socket, game]);
 
-  // useEffect(() => {
-  //   const toastUserDisconnect = (account) => {
-  //     onClose();
-  //     openGameOver();
-  //     setGameState((nextState) => ({
-  //       ...nextState,
-  //       reason: `Opponent (${truncateHash(account)}) left the game`,
-  //       winner: currentPlayerSide,
-  //     }));
-  //   };
-
-  //   if (socket) {
-  //     socket.on("disconnect", toastUserDisconnect);
-  //   }
-
-  //   return () => {
-  //     if (socket) {
-  //       socket.off("disconnect", toastUserDisconnect);
-  //     }
-  //   };
-  // }, [socket, currentPlayerSide, onClose, openGameOver, game]);
-
-  const postMatchWinner = useCallback(
-    async (data: MatchData, reason?: string) => {
-      const winningSide = game.turn() === "w" ? "black" : "white";
-      try {
-        await axios.post(process.env.NEXT_PUBLIC_SERVER + "/match/winner", {
-          hash: data[winningSide].hash,
+  useEffect(() => {
+    const postMatchWinner = async (
+      data: MatchData,
+      winningSide: Orientation,
+      reason?: string,
+      draw: boolean = false
+    ) => {
+      console.log("MATCH ENDED due to opponent leaving postMatchWinner()");
+      setGameState((nextState) => ({
+        ...nextState,
+        reason: reason,
+        winner: winningSide,
+      }));
+      return await axios.post(
+        process.env.NEXT_PUBLIC_SERVER + "/match/winner",
+        {
+          hash: draw ? "Draw" : data[winningSide].hash,
           match_id: data.match_id,
-        });
+        }
+      );
+    };
 
-        setGameState((nextState) => ({
-          ...nextState,
-          reason: reason,
-          winner: winningSide,
-        }));
+    const toastUserDisconnect = async () => {
+      onClose();
+      try {
+        const response = await postMatchWinner(
+          data,
+          currentPlayerSide,
+          "Opponent Left"
+        );
+
         openGameOver();
-      } catch {
-        console.log("Could not set winner");
+        if (response.status === 200) {
+          console.log("Returning Money");
+          const totalWinning =
+            (data.white.amount + data.black.amount) *
+            (1 - appConfig.platformFee);
+
+          await _safeTransferToken(totalWinning, data[currentPlayerSide].hash, {
+            onSuccess: () => {
+              createToast(
+                `${totalWinning} ASHF sent to ${truncateHash(data.winner)}`,
+                "success"
+              );
+              router.push(`/fin/${data.match_id}`);
+            },
+            onError: (err) => {
+              createToast(
+                `Error while refunding ASHF`,
+                "error",
+                `Contact support for details. Error: ${err.message}`
+              );
+            },
+          });
+        }
+      } catch (e) {
+        createToast("Could Not Update Winner", "error", e.message);
       }
-    },
-    [game, openGameOver]
-  );
+    };
+
+    if (socket) {
+      socket.on("disconnect", toastUserDisconnect);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("disconnect", toastUserDisconnect);
+      }
+    };
+  }, [
+    socket,
+    currentPlayerSide,
+    onClose,
+    openGameOver,
+    game,
+    data,
+    createToast,
+    router,
+  ]);
 
   useEffect(() => {
+    const postMatchWinner = async (
+      data: MatchData,
+      winningSide: Orientation,
+      reason?: string,
+      draw: boolean = false
+    ) => {
+      console.log("MATCH ENDED postMatchWinner()");
+      setGameState((nextState) => ({
+        ...nextState,
+        reason: reason,
+        winner: winningSide,
+      }));
+      return await axios.post(
+        process.env.NEXT_PUBLIC_SERVER + "/match/winner",
+        {
+          hash: draw ? "Draw" : data[winningSide].hash,
+          match_id: data.match_id,
+        }
+      );
+    };
+
+    //SCENARIO: CHECKMATE
     if (game.in_checkmate()) {
-      postMatchWinner(data, "Checkmate");
+      const winningSide = game.turn() === "w" ? "black" : "white";
+
+      postMatchWinner(data, winningSide, "Checkmate")
+        .then(async () => {
+          openGameOver();
+          const totalWinning =
+            (data.white.amount + data.black.amount) *
+            (1 - appConfig.platformFee);
+
+          await _safeTransferToken(totalWinning, data.winner, {
+            onSuccess: () => {
+              createToast(
+                `${totalWinning} ASHF sent to ${truncateHash(data.winner)}`,
+                "success"
+              );
+              router.push(`/fin/${data.match_id}`);
+            },
+            onError: (err) => {
+              createToast(
+                `Error while refunding ASHF`,
+                "error",
+                `Contact support for details. Error: ${err.message}`
+              );
+            },
+          });
+        })
+        .catch((e) => {
+          console.log(e);
+          createToast(
+            "Could Not Update Winner",
+            "error",
+            "Contact support for any disputes regarding ASHF & winner."
+          );
+        });
     }
-  }, [game, data, postMatchWinner]);
+
+    //SCENARIO: DRAW/STALEMATE
+    if (game.in_draw() || game.in_stalemate()) {
+      const winningSide = game.turn() === "w" ? "black" : "white";
+
+      postMatchWinner(data, winningSide, "Draw", true)
+        .then(async () => {
+          openGameOver();
+          const whiteRefund = data.white.amount * (1 - appConfig.platformFee);
+          const blackRefund = data.black.amount * (1 - appConfig.platformFee);
+
+          await _safeTransferToken(whiteRefund, data.white.hash, {
+            onSuccess: () => {
+              createToast(
+                `${whiteRefund} ASHF sent to ${truncateHash(data.white.hash)}`,
+                "success"
+              );
+            },
+            onError: (err) => {
+              createToast(
+                `Error while refunding ASHF`,
+                "error",
+                `Contact support for details. Error: ${err.message}`
+              );
+            },
+          });
+
+          await _safeTransferToken(blackRefund, data.black.hash, {
+            onSuccess: () => {
+              createToast(
+                `${blackRefund} ASHF sent to ${truncateHash(data.black.hash)}`,
+                "success"
+              );
+            },
+            onError: (err) => {
+              createToast(
+                `Error while refunding ASHF`,
+                "error",
+                `Contact support for details. Error: ${err.message}`
+              );
+            },
+          });
+        })
+        .catch(() => {
+          createToast(
+            "Could Not Update Winner",
+            "error",
+            "Contact support for any disputes regarding ASHF & winner."
+          );
+        });
+    }
+  }, [game, createToast, openGameOver, router, data]);
 
   return (
     <>
@@ -283,10 +431,7 @@ const PlayPage: NextPage<PlayPageProps> = ({ data }) => {
           </ModalHeader>
           <ModalBody p={"2rem"}>
             <Text color="whiteAlpha.800" paddingBottom="1rem">
-              Reason: {gameState.reason}
-            </Text>
-            <Text textAlign="center" fontWeight="700" color="whiteAlpha.800">
-              $ASHF 2000 transferred to {data[gameState.winner]}
+              {gameState.reason}
             </Text>
           </ModalBody>
         </ModalContent>
